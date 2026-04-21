@@ -1,8 +1,49 @@
-# Ministry of Justice Template Repository
+# Ministry of Justice Engineering Platform
 
-[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/template-repository/badge)](https://github-community.service.justice.gov.uk/repository-standards/template-repository)
+[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/ministry-of-justice-engineering-platform/badge)](https://github-community.service.justice.gov.uk/repository-standards/ministry-of-justice-engineering-platform)
 
-This template repository equips you with the default initial files required for a Ministry of Justice GitHub repository.
+This repository provides centralized, reusable GitHub Actions workflows and automation for the Ministry of Justice Developer Experience (DevX) team.
+
+## Purpose
+
+This repository centralizes ownership of reusable GitHub workflows to:
+- Improve consistency across MoJ repositories
+- Reduce duplication and drift between teams
+- Enable standardization of CI/CD and automation patterns
+- Provide DevX-owned automation for GitHub organization management
+
+## Workflows
+
+This repository provides several categories of workflows:
+
+### Member Management
+- **Add Members to Root Team (MoJ)** - Automated workflow that ensures GitHub organization members are added to root team for `ministryofjustice` organization
+- **Add Members to Root Team (MoJAS)** - Automated workflow that ensures GitHub organization members are added to root team for `moj-analytical-services` organization
+
+### CI/CD
+- **Dependency Review** - Security scanning for dependency vulnerabilities in pull requests
+- **Lint** - Validates GitHub Actions workflows, Markdown, and YAML files on pull requests
+- **OpenSSF Scorecard** - Publishes repository security posture results to GitHub code scanning
+- **Python Tests** (Reusable) - Reusable workflow for running Python unit tests with Pipenv
+
+For detailed documentation, operational guidance, and troubleshooting, see the [Workflows Runbook](docs/WORKFLOWS_RUNBOOK.md).
+
+## Using Reusable Workflows
+
+Other MoJ repositories can use these workflows by referencing them in their own workflow files:
+
+```yaml
+jobs:
+  add-members:
+    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-members-to-root-team.yml@main
+    with:
+      organization-name: "ministryofjustice"
+      python-version: "3.11"
+    secrets:
+      app-id: ${{ secrets.APP_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
 
 ## Included Files
 
@@ -12,59 +53,24 @@ The repository comes with the following preset files:
 - .gitignore
 - CODEOWNERS
 - dependabot.yml
-- GitHub Actions example files
-- Ministry of Justice Compliance Badge (public repositories only)
+- GitHub Actions workflows (see [Workflows Runbook](docs/WORKFLOWS_RUNBOOK.md))
 
-## Setup Instructions
+## Contributing
 
-Once you've created your repository using this template, ensure the following steps:
+Contributions to improve workflows or add new reusable patterns are welcome. Please:
 
-### Update README
+1. Create a feature branch
+2. Make your changes
+3. Test workflows thoroughly
+4. Update documentation
+5. Submit a pull request
 
-Edit this README.md file to document your project accurately. Take the time to create a clear, engaging, and informative README.md file. Include information like what your project does, how to install and run it, how to contribute, and any other pertinent details.
+## Standards Compliance
 
-### Update repository description
+This repository follows the [Ministry of Justice GitHub Repository Standards](https://github-community.service.justice.gov.uk/repository-standards/guidance).
 
-After you've created your repository, GitHub provides a brief description field that appears on the top of your repository's main page. This is a summary that gives visitors quick insight into the project. Using this field to provide a succinct overview of your repository is highly recommended.
+## Support
 
-This description and your README.md will be one of the first things people see when they visit your repository. It's a good place to make a strong, concise first impression. Remember, this is often visible in search results on GitHub and search engines, so it's also an opportunity to help people discover your project.
-
-### Grant Team Permissions
-
-Assign permissions to the appropriate Ministry of Justice teams. Ensure at least one team is granted Admin permissions. Whenever possible, assign permissions to teams rather than individual users.
-
-Prefer to user GitHub Teams over individual access to repositories. Where appropriate, ensure GitHub Teams used are related to a Parent Team associated with a Business Unit to help ensure ownership can be easily identified.
-
-### Read about the GitHub repository standards
-
-Familiarise yourself with the Ministry of Justice GitHub Repository Standards. These standards ensure consistency, maintainability, and best practices across all our repositories.
-
-You can find the standards [here](https://github-community.service.justice.gov.uk/repository-standards/guidance).
-
-Please read and understand these standards thoroughly and enable them when you feel comfortable.
-
-### Modify the GitHub Standards Badge
-
-Once you've ensured that all the [GitHub Repository Standards](https://github-community.service.justice.gov.uk/repository-standards/guidance) have been applied to your repository, it's time to update the Ministry of Justice (MoJ) Compliance Badge located in the README file.
-
-The badge demonstrates that your repository is compliant with MoJ's standards.
-
-To update the badge, replace the `template-repository` in the badge URL with your repository's name. The badge URL should look like this:
-
-```markdown
-[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/${your-repository-name}/badge)](https://github-community.service.justice.gov.uk/repository-standards/${your-reposistory-name})
-```
-
-**Please note** the badge will not function correctly if your repository is internal or private. In this case, you may remove the badge from your README.
-
-### Update CODEOWNERS
-
-(Optional) Modify the CODEOWNERS file to specify the teams or users authorized to approve pull requests.
-
-### Configure Dependabot
-
-Adapt the dependabot.yml file to match your project's [dependency manager](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem) and to enable [automated pull requests for package updates](https://docs.github.com/en/code-security/supply-chain-security).
-
-### Dependency Review
-
-If your repository is private with no GitHub Advanced Security license, remove the `.github/workflows/dependency-review.yml` file.
+For questions or issues:
+- Open an issue in this repository
+- Contact the DevX Engineering Platform team

@@ -1,0 +1,59 @@
+---
+name: Reusable - Python Tests
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version to use"
+        required: false
+        type: string
+        default: "3.11"
+      run-coverage:
+        description: "Whether to upload coverage to Codecov"
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      codecov-token:
+        description: "Codecov token for uploading coverage"
+        required: false
+
+jobs:
+  run-unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for better relevancy of analysis
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: "pipenv"
+
+      - name: Install Pipenv
+        run: pip install pipenv
+
+      - name: Verify Pipfile.lock is in sync
+        run: pipenv verify
+
+      - name: Install Dependencies
+        run: pipenv install --dev
+
+      - name: Run Unit Tests
+        run: pipenv run tests
+
+      - name: Show Coverage
+        run: pipenv run tests_report
+
+      - name: Upload Coverage to Codecov
+        if: inputs.run-coverage && secrets.codecov-token != ''
+        uses: codecov/codecov-action@ef609d6cb5624f374eed2390087f7ac0fc5f688a # v4.6.0
+        with:
+          token: ${{ secrets.codecov-token }}
