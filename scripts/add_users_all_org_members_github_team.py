@@ -107,19 +107,22 @@ class GithubTeamSyncService:
         payload: dict[str, str] | None = None,
     ) -> tuple[object, dict[str, str]]:
         data = None
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {self.github_token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "moj-engineering-platform-workflows",
+        }
+
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
 
         request = urllib.request.Request(
             url,
             data=data,
             method=method,
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {self.github_token}",
-                "X-GitHub-Api-Version": "2022-11-28",
-                "User-Agent": "moj-engineering-platform-workflows",
-            },
+            headers=headers,
         )
 
         try:

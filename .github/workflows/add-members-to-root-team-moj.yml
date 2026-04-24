@@ -10,6 +10,8 @@ permissions: {}
 
 jobs:
   call-reusable-workflow:
+    permissions:
+      contents: read
     uses: ./.github/workflows/reusable-add-members-to-root-team.yml
     with:
       organization-name: "ministryofjustice"
