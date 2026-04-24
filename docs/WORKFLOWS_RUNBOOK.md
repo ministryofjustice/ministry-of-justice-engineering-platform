@@ -79,10 +79,10 @@ graph LR
 
 The Python script (`scripts.add_users_all_org_members_github_team`):
 1. Fetches all members of the organization
-2. Identifies the root team for the organization
+2. Uses the configured root team slug for the target organization
 3. Checks which members are not in the root team
 4. Adds missing members to the root team
-5. Logs all actions
+5. Writes progress and results to the workflow logs
 
 ### Prerequisites
 
@@ -104,7 +104,7 @@ The Python script (`scripts.add_users_all_org_members_github_team`):
 | Secret Name | Purpose | Default Behavior |
 |------------|---------|------------------|
 | `SLACK_WEBHOOK_URL` | Failure notifications | No notification sent |
-| `LOGGING_LEVEL` | Python logging verbosity | Uses script default |
+| `LOGGING_LEVEL` | Python logging verbosity | Defaults to `INFO` |
 
 ### GitHub App Permissions Required
 
@@ -410,7 +410,7 @@ A: Go to Actions → Select workflow → ⋯ menu → "Disable workflow"
 A: No, it only adds missing members. It never removes anyone.
 
 **Q: Can I use this for other organizations?**
-A: Yes, create a new caller workflow with the organization name. You'll need to install the app in that org.
+A: Not as-is. The current script supports only `ministryofjustice` and `moj-analytical-services`, because each org is mapped to a specific root team slug in the script.
 
 ### Support
 

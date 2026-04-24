@@ -19,6 +19,8 @@ on:
         description: "Codecov token for uploading coverage"
         required: false
 
+permissions: {}
+
 jobs:
   run-unit-tests:
     name: Run Unit Tests
@@ -27,7 +29,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # Shallow clones should be disabled for better relevancy of analysis
 
@@ -38,7 +40,9 @@ jobs:
           cache: "pipenv"
 
       - name: Install Pipenv
-        run: pip install pipenv
+        run: >-
+          pip install
+          "pipenv @ https://files.pythonhosted.org/packages/cf/0e/e5297a36fc2fa01f59b4995fffcb740a744db12864ea94392b0079dd26c2/pipenv-2024.4.1-py3-none-any.whl#sha256=ab26ee98a7d83d342c1f562ee0564094ab1de091e5d5cec4eeaa95fb600de998"
 
       - name: Verify Pipfile.lock is in sync
         run: pipenv verify

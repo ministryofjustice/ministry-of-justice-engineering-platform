@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import urllib.error
@@ -12,6 +13,13 @@ MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_NAME = "moj-analytical-services"
 MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_BASE_TEAM_NAME = "everyone"
 
 API_BASE_URL = "https://api.github.com"
+DEFAULT_LOGGING_LEVEL = "INFO"
+
+
+def configure_logging() -> None:
+    logging_level = os.getenv("LOGGING_LEVEL", DEFAULT_LOGGING_LEVEL).upper()
+    level = getattr(logging, logging_level, logging.INFO)
+    logging.basicConfig(level=level, format="%(levelname)s %(message)s")
 
 
 def get_environment_variables() -> tuple[str, str]:
@@ -39,7 +47,12 @@ def get_config_for_organization(github_organization_name: str) -> tuple[str, str
             MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_BASE_TEAM_NAME,
         )
 
-    raise ValueError(f"Unsupported Github Organization Name [{github_organization_name}]")
+    raise ValueError(
+        "Unsupported GitHub organization name "
+        f"[{github_organization_name}]. Supported values are "
+        f"{MINISTRYOFJUSTICE_GITHUB_ORGANIZATION_NAME} and "
+        f"{MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_NAME}."
+    )
 
 
 class GithubTeamSyncService:
@@ -56,7 +69,7 @@ class GithubTeamSyncService:
         )
 
         missing_members = sorted(all_members - team_members)
-        print(
+        logging.info(
             f"Organization {self.organization_name}: {len(all_members)} org members, "
             f"{len(team_members)} team members, {len(missing_members)} missing"
         )
@@ -66,7 +79,7 @@ class GithubTeamSyncService:
                 f"/orgs/{self.organization_name}/teams/{team_slug}/memberships/{login}",
                 {"role": "member"},
             )
-            print(f"Added {login} to {team_slug}")
+            logging.info("Added %s to %s", login, team_slug)
 
     def _get_paginated_logins(self, path: str) -> set[str]:
         next_url = self._build_url(path, {"per_page": 100})
@@ -140,6 +153,7 @@ class GithubTeamSyncService:
 
 
 def main() -> None:
+    configure_logging()
     github_token, github_organization_name = get_environment_variables()
     organization_name, organization_team_name = get_config_for_organization(
         github_organization_name

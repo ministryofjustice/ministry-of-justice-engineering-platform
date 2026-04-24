@@ -6,6 +6,8 @@ on:
   schedule:
     - cron: "0 8,10,12,14,16 * * 1-5"
 
+permissions: {}
+
 jobs:
   call-reusable-workflow:
     uses: ./.github/workflows/reusable-add-members-to-root-team.yml
