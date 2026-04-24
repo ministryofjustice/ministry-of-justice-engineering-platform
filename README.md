@@ -35,7 +35,7 @@ Other MoJ repositories can use these workflows by referencing them in their own 
 ```yaml
 jobs:
   add-members:
-    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-members-to-root-team.yml@main
+    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-members-to-root-team.yml@abb20ab0f42c5344f0479a4a5d931a1d72d9278e
     with:
       organization-name: "ministryofjustice"
       python-version: "3.11"

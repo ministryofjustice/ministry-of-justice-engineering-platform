@@ -14,6 +14,7 @@ MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_BASE_TEAM_NAME = "everyone"
 
 API_BASE_URL = "https://api.github.com"
 DEFAULT_LOGGING_LEVEL = "INFO"
+DEFAULT_HTTP_TIMEOUT_SECONDS = 30
 
 
 def configure_logging() -> None:
@@ -122,7 +123,9 @@ class GithubTeamSyncService:
         )
 
         try:
-            with urllib.request.urlopen(request) as response:
+            with urllib.request.urlopen(
+                request, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS
+            ) as response:
                 response_body = response.read().decode("utf-8")
                 parsed_body = json.loads(response_body) if response_body else {}
                 return parsed_body, dict(response.headers.items())
