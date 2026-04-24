@@ -57,7 +57,9 @@ jobs:
         run: pipenv run tests_report
 
       - name: Upload Coverage to Codecov
-        if: inputs.run-coverage && secrets['codecov-token'] != ''
+        if: inputs.run-coverage && env.CODECOV_TOKEN != ''
+        env:
+          CODECOV_TOKEN: ${{ secrets.codecov-token }}
         uses: codecov/codecov-action@ef609d6cb5624f374eed2390087f7ac0fc5f688a # v4.6.0
         with:
-          token: ${{ secrets.codecov-token }}
+          token: ${{ env.CODECOV_TOKEN }}
