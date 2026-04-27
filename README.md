@@ -32,6 +32,8 @@ For detailed documentation, operational guidance, and troubleshooting, see the [
 
 Other MoJ repositories can use these workflows by referencing them in their own workflow files:
 
+The member-sync reusable workflow checks out this repository at the same ref as the called workflow so `scripts/add_users_all_org_members_github_team.py` is always available when consumed cross-repo.
+
 ```yaml
 jobs:
   add-members:

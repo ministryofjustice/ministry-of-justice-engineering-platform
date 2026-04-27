@@ -38,8 +38,21 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout Repository
+      - name: Resolve Workflow Source
+        id: workflow-source
+        run: |
+          WORKFLOW_REF="${{ github.workflow_ref }}"
+          SOURCE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
+          SOURCE_REF="${WORKFLOW_REF##*@}"
+          echo "repo=${SOURCE_REPO}" >> "$GITHUB_OUTPUT"
+          echo "ref=${SOURCE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Workflow Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ steps.workflow-source.outputs.repo }}
+          ref: ${{ steps.workflow-source.outputs.ref }}
+          path: workflow-source
 
       - name: Generate GitHub App Token
         id: generate-token
@@ -56,6 +69,7 @@ jobs:
 
       - name: Run Member Addition Script
         run: python3 -m scripts.add_users_all_org_members_github_team
+        working-directory: workflow-source
         env:
           ADMIN_GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           GITHUB_ORGANIZATION_NAME: ${{ inputs['organization-name'] }}
