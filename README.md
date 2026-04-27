@@ -53,8 +53,6 @@ The repository comes with the following preset files:
 
 - LICENSE
 - .gitignore
-- CODEOWNERS
-- dependabot.yml
 - GitHub Actions workflows (see [Workflows Runbook](docs/WORKFLOWS_RUNBOOK.md))
 
 ## Contributing
