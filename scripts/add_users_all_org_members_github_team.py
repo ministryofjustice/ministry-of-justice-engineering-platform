@@ -4,6 +4,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from typing import Any
 
 
 MINISTRYOFJUSTICE_GITHUB_ORGANIZATION_NAME = "ministryofjustice"
@@ -15,6 +16,23 @@ MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_BASE_TEAM_NAME = "everyone"
 API_BASE_URL = "https://api.github.com"
 DEFAULT_LOGGING_LEVEL = "INFO"
 DEFAULT_HTTP_TIMEOUT_SECONDS = 30
+
+
+class GithubApiRequestError(RuntimeError):
+    def __init__(
+        self,
+        method: str,
+        url: str,
+        status_code: int,
+        response_body: Any,
+    ) -> None:
+        self.method = method
+        self.url = url
+        self.status_code = status_code
+        self.response_body = response_body
+        super().__init__(
+            f"GitHub API request failed: {method} {url} -> {status_code} {response_body}"
+        )
 
 
 def configure_logging() -> None:
@@ -70,17 +88,30 @@ class GithubTeamSyncService:
         )
 
         missing_members = sorted(all_members - team_members)
+        missing_2fa_members: list[str] = []
         logging.info(
             f"Organization {self.organization_name}: {len(all_members)} org members, "
             f"{len(team_members)} team members, {len(missing_members)} missing"
         )
 
         for login in missing_members:
-            self._put(
-                f"/orgs/{self.organization_name}/teams/{team_slug}/memberships/{login}",
-                {"role": "member"},
-            )
-            logging.info("Added %s to %s", login, team_slug)
+            try:
+                self._put(
+                    f"/orgs/{self.organization_name}/teams/{team_slug}/memberships/{login}",
+                    {"role": "member"},
+                )
+                logging.info("Added %s to %s", login, team_slug)
+            except GithubApiRequestError as error:
+                if self._is_user_missing_2fa(error):
+                    missing_2fa_members.append(login)
+                    logging.warning(
+                        "Skipped %s due to org 2FA requirement", login
+                    )
+                    continue
+                raise
+
+        if missing_2fa_members:
+            self._report_missing_2fa_users(team_slug, missing_2fa_members)
 
     def _get_paginated_logins(self, path: str) -> set[str]:
         next_url = self._build_url(path, {"per_page": 100})
@@ -134,9 +165,65 @@ class GithubTeamSyncService:
                 return parsed_body, dict(response.headers.items())
         except urllib.error.HTTPError as error:
             details = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(
-                f"GitHub API request failed: {method} {url} -> {error.code} {details}"
+            try:
+                parsed_details: Any = json.loads(details)
+            except json.JSONDecodeError:
+                parsed_details = details
+            raise GithubApiRequestError(
+                method=method,
+                url=url,
+                status_code=error.code,
+                response_body=parsed_details,
             ) from error
+
+    @staticmethod
+    def _is_user_missing_2fa(error: GithubApiRequestError) -> bool:
+        if error.status_code != 422:
+            return False
+
+        body = error.response_body
+        if not isinstance(body, dict):
+            return False
+
+        errors = body.get("errors")
+        if not isinstance(errors, list):
+            return False
+
+        for entry in errors:
+            if isinstance(entry, dict) and entry.get("code") == "no_2fa":
+                return True
+
+        return False
+
+    def _report_missing_2fa_users(self, team_slug: str, users: list[str]) -> None:
+        users_sorted = sorted(users)
+        users_csv = ", ".join(users_sorted)
+        logging.warning(
+            "Skipped %d users for team %s due to org 2FA requirement: %s",
+            len(users_sorted),
+            team_slug,
+            users_csv,
+        )
+
+        # Emit a visible annotation in the workflow logs.
+        print(
+            "::warning title=Users skipped (2FA required)::"
+            f"{len(users_sorted)} users were skipped: {users_csv}"
+        )
+
+        # Add a run summary section visible in the GitHub Actions UI.
+        summary_path = os.getenv("GITHUB_STEP_SUMMARY")
+        if not summary_path:
+            return
+
+        with open(summary_path, "a", encoding="utf-8") as summary_file:
+            summary_file.write("### Users skipped due to missing 2FA\n\n")
+            summary_file.write(
+                f"Team: `{team_slug}` in `{self.organization_name}`.\n\n"
+            )
+            for user in users_sorted:
+                summary_file.write(f"- `{user}`\n")
+            summary_file.write("\n")
 
     @staticmethod
     def _build_url(path: str, params: dict[str, int] | None = None) -> str:

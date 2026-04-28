@@ -34,6 +34,7 @@ jobs:
     name: Add Members to Root Team
     runs-on: ubuntu-latest
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       SLACK_WEBHOOK_URL: ${{ secrets['slack-webhook-url'] }}
     permissions:
       contents: read
