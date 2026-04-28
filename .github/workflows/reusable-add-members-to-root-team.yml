@@ -1,0 +1,84 @@
+---
+name: Reusable - Add GitHub Members to Root Team
+
+on:
+  workflow_call:
+    inputs:
+      organization-name:
+        description: "GitHub organization name (e.g., ministryofjustice or moj-analytical-services)"
+        required: true
+        type: string
+      python-version:
+        description: "Python version to use"
+        required: false
+        type: string
+        default: "3.11"
+    secrets:
+      app-id:
+        description: "GitHub App ID"
+        required: true
+      app-private-key:
+        description: "GitHub App private key"
+        required: true
+      slack-webhook-url:
+        description: "Slack webhook URL for notifications"
+        required: false
+      logging-level:
+        description: "Logging level for the script"
+        required: false
+
+permissions: {}
+
+jobs:
+  add-members-to-root-team:
+    name: Add Members to Root Team
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets['slack-webhook-url'] }}
+    permissions:
+      contents: read
+    steps:
+      - name: Resolve Workflow Source
+        id: workflow-source
+        run: |
+          WORKFLOW_REF="${{ github.workflow_ref }}"
+          SOURCE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
+          SOURCE_REF="${WORKFLOW_REF##*@}"
+          echo "repo=${SOURCE_REPO}" >> "$GITHUB_OUTPUT"
+          echo "ref=${SOURCE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Workflow Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ steps.workflow-source.outputs.repo }}
+          ref: ${{ steps.workflow-source.outputs.ref }}
+          path: workflow-source
+
+      - name: Generate GitHub App Token
+        id: generate-token
+        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        with:
+          app-id: ${{ secrets['app-id'] }}
+          private-key: ${{ secrets['app-private-key'] }}
+          owner: ${{ inputs['organization-name'] }}
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      - name: Run Member Addition Script
+        run: python3 -m scripts.add_users_all_org_members_github_team
+        working-directory: workflow-source
+        env:
+          ADMIN_GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GITHUB_ORGANIZATION_NAME: ${{ inputs['organization-name'] }}
+          LOGGING_LEVEL: ${{ secrets['logging-level'] }}
+
+      - name: Report Failure to Slack
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        uses: ravsamhq/notify-slack-action@472601e839b758e36c455b5d3e5e1a217d4807bd # 2.5.0
+        with:
+          status: ${{ job.status }}
+          notify_when: "failure"
+          notification_title: "Failed GitHub Action Run - ${{ inputs['organization-name'] }}"

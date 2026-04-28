@@ -1,0 +1,57 @@
+---
+name: Reusable - Python Tests
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version to use"
+        required: false
+        type: string
+        default: "3.11"
+      run-coverage:
+        description: "Whether to upload coverage to Codecov"
+        required: false
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  run-unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for better relevancy of analysis
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: ${{ inputs['python-version'] }}
+          cache: "pipenv"
+
+      - name: Install Pipenv
+        run: >-
+          pip install
+          "pipenv @ https://files.pythonhosted.org/packages/cf/0e/e5297a36fc2fa01f59b4995fffcb740a744db12864ea94392b0079dd26c2/pipenv-2024.4.1-py3-none-any.whl#sha256=ab26ee98a7d83d342c1f562ee0564094ab1de091e5d5cec4eeaa95fb600de998"
+
+      - name: Verify Pipfile.lock is in sync
+        run: pipenv verify
+
+      - name: Install Dependencies
+        run: pipenv install --dev
+
+      - name: Run Unit Tests
+        run: pipenv run tests
+
+      - name: Show Coverage
+        run: pipenv run tests_report
+
+      - name: Upload Coverage to Codecov
+        if: inputs['run-coverage']
+        uses: codecov/codecov-action@ef609d6cb5624f374eed2390087f7ac0fc5f688a # v4.6.0
