@@ -62,6 +62,7 @@ graph LR
 3. Token is valid for 1 hour
 4. Token is scoped to the specific organization
 5. Token is passed to the Python script as `ADMIN_GITHUB_TOKEN`
+6. The configured GitHub App must be installed in each target organization
 
 #### 3. Execution Steps
 
@@ -82,7 +83,8 @@ The Python script (`scripts.add_users_all_org_members_github_team`):
 2. Uses the configured root team slug for the target organization
 3. Checks which members are not in the root team
 4. Adds missing members to the root team
-5. Writes progress and results to the workflow logs
+5. Skips users who fail with GitHub API `422 no_2fa` (organization 2FA policy)
+6. Writes progress and results to workflow logs and step summary
 
 ### Prerequisites
 
@@ -90,8 +92,10 @@ The Python script (`scripts.add_users_all_org_members_github_team`):
 
 | Secret Name | Type | Description | How to Get |
 |------------|------|-------------|------------|
-| `APP_ID` | Repository Secret | GitHub App ID | From app settings page |
-| `APP_PRIVATE_KEY` | Repository Secret | Private key in PEM format | Generated when creating app |
+| `APP_ID` | Repository Secret | GitHub App ID | From enterprise app settings page |
+| `APP_PRIVATE_KEY` | Repository Secret | Private key in PEM format | Generated for the same enterprise app |
+
+The same app credentials are used for both workflows, but the app must be installed in both `ministryofjustice` and `moj-analytical-services` organizations.
 
 **Adding Secrets**:
 1. Go to: Settings → Secrets and variables → Actions → Secrets
@@ -159,6 +163,14 @@ The GitHub App must have these permissions:
 ✓ Run Member Addition Script
   All members already in root team
   No changes needed
+```
+
+**Run with 2FA Policy Skips**:
+```
+✓ Run Member Addition Script
+   Organization ministryofjustice: 1679 org members, 1675 team members, 4 missing
+   WARNING Skipped bercuddy-lang due to org 2FA requirement
+   WARNING Skipped 4 users for team all-org-members due to org 2FA requirement: bercuddy-lang, chinenyeedu, gbadero0404, tadenekan
 ```
 
 ### Troubleshooting
@@ -234,6 +246,23 @@ Error: The job running on runner has exceeded the maximum execution time of X mi
 1. Check GitHub API rate limits
 2. Consider adding delays in the script
 3. Contact DevX team for optimization
+
+##### 6. Users skipped due to 2FA policy
+
+**Error Message**:
+```
+422 Unprocessable Entity ... "code":"no_2fa"
+```
+
+**Cause**: One or more users do not satisfy organization 2FA requirements.
+
+**Behavior**:
+1. The workflow skips those users and continues processing remaining members.
+2. Skipped usernames are shown in logs and in the Actions step summary.
+
+**Solution**:
+1. Ask affected users to enable 2FA on GitHub.
+2. Re-run workflow manually (or wait for next scheduled run).
 
 #### Debugging Steps
 
@@ -395,10 +424,10 @@ Set up alerts for:
 A: Yes, use "Run workflow" and select your branch. Note that scheduled runs always use `main`.
 
 **Q: How do I see which members were added?**
-A: Check the "Run Member Addition Script" step output in the workflow logs.
+A: Check the "Run Member Addition Script" step output in workflow logs. For skipped users (for example missing 2FA), check the step summary section as well.
 
 **Q: What happens if the workflow fails?**
-A: Members won't be added for that run. The next scheduled run (in 2 hours) will retry.
+A: Non-recoverable errors fail the run and retry on next schedule. Recoverable `no_2fa` user errors are skipped and reported, and the run continues.
 
 **Q: Can I change the schedule?**
 A: Yes, edit the cron expression in the workflow file. Requires code change and merge.
@@ -416,8 +445,8 @@ A: Not as-is. The current script supports only `ministryofjustice` and `moj-anal
 
 For issues or questions:
 - **Workflow Issues**: Open issue in this repository
-- **GitHub App Issues**: Contact DevX team
-- **Urgent Issues**: Slack #devx-platform channel
+- **GitHub App Issues**: Contact Developer Experience Team - [DeveloperExperienceTeam@justice.gov.uk](mailto:DeveloperExperienceTeam@justice.gov.uk)
+- **Urgent Issues**: Slack #developer-experience-team Channel
 - **Security Concerns**: Follow security incident process
 
 ### Related Documentation
