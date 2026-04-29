@@ -445,7 +445,7 @@ A: Not as-is. The current script supports only `ministryofjustice` and `moj-anal
 
 For issues or questions:
 - **Workflow Issues**: Open issue in this repository
-- **GitHub App Issues**: Contact Developer Experience Team - DeveloperExperienceTeam@justice.gov.uk
+- **GitHub App Issues**: Contact Developer Experience Team - [DeveloperExperienceTeam@justice.gov.uk](mailto:DeveloperExperienceTeam@justice.gov.uk)
 - **Urgent Issues**: Slack #developer-experience-team Channel
 - **Security Concerns**: Follow security incident process
 
