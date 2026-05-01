@@ -36,15 +36,17 @@ jobs:
           cache: "pipenv"
 
       - name: Install Pipenv
-        run: >-
-          pip install
-          "pipenv @ https://files.pythonhosted.org/packages/cf/0e/e5297a36fc2fa01f59b4995fffcb740a744db12864ea94392b0079dd26c2/pipenv-2024.4.1-py3-none-any.whl#sha256=ab26ee98a7d83d342c1f562ee0564094ab1de091e5d5cec4eeaa95fb600de998"
+        run: |
+          cat <<'EOF' > .pipenv-requirements-ci.txt
+          pipenv==2024.4.1 --hash=sha256:ab26ee98a7d83d342c1f562ee0564094ab1de091e5d5cec4eeaa95fb600de998
+          EOF
+          python -m pip install --require-hashes -r .pipenv-requirements-ci.txt
 
       - name: Verify Pipfile.lock is in sync
         run: pipenv verify
 
       - name: Install Dependencies
-        run: pipenv install --dev
+        run: pipenv sync --dev --verbose
 
       - name: Run Unit Tests
         run: pipenv run tests
