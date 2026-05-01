@@ -57,10 +57,7 @@ jobs:
 
       - name: Run yamllint
         run: |
-          cat <<'EOF' > .yamllint-requirements-ci.txt
-          yamllint==1.37.1 --hash=sha256:364f0d79e81409f591e323725e6a9f4504c8699ddf2d7263d8d2b539cd66a583
-          EOF
-          python -m pip install --require-hashes -r .yamllint-requirements-ci.txt
+          python -m pip install "yamllint @ https://files.pythonhosted.org/packages/dd/b9/be7a4cfdf47e03785f657f94daea8123e838d817be76c684298305bd789f/yamllint-1.37.1-py3-none-any.whl#sha256=364f0d79e81409f591e323725e6a9f4504c8699ddf2d7263d8d2b539cd66a583"
           cat <<'EOF' > .yamllint-ci.yml
           extends: default
           rules:
