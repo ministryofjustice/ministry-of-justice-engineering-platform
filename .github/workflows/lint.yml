@@ -72,3 +72,16 @@ jobs:
             truthy: disable
           EOF
           yamllint -c .yamllint-ci.yml .
+
+  reusable-workflow-schema-checks:
+    name: Reusable Workflow Schema Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Keep workflow_call interfaces stable for downstream repositories.
+      - name: Validate reusable workflow schemas
+        run: bash scripts/validate_reusable_workflow_schemas.sh
