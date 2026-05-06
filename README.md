@@ -23,6 +23,7 @@ This repository provides several categories of workflows:
 ### CI/CD
 - **Dependency Review** - Security scanning for dependency vulnerabilities in pull requests
 - **Lint** - Validates GitHub Actions workflows, Markdown, and YAML files on pull requests
+- **CodeQL** - Performs static application security testing on pull requests, main branch pushes, and a weekly schedule
 - **OpenSSF Scorecard** - Publishes repository security posture results to GitHub code scanning
 - **Python Tests** (Reusable) - Reusable workflow for running Python unit tests with Pipenv
 
