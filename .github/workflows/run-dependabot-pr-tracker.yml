@@ -58,8 +58,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.REPO_ISSUE_APP_ID }}
+          private-key: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
           owner: ${{ env.TEAM_ORG }}
           permission-members: read
 
@@ -93,5 +93,5 @@ jobs:
     with:
       repo: ${{ matrix.repo }}
     secrets:
-      APP_ID: ${{ secrets.APP_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+      APP_ID: ${{ secrets.REPO_ISSUE_APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
