@@ -1,0 +1,153 @@
+name: Create or Update Dependabot Tracking Issue
+
+on:
+  workflow_call:
+    inputs:
+      repo:
+        description: "Repository to process in owner/name format"
+        required: true
+        type: string
+    secrets:
+      APP_ID:
+        description: "GitHub App ID"
+        required: true
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key"
+        required: true
+
+jobs:
+  process-repo:
+    name: Process ${{ inputs.repo }}
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Parse target repo
+        id: target
+        env:
+          TARGET_REPO: ${{ inputs.repo }}
+        run: |
+          set -euo pipefail
+
+          owner="${TARGET_REPO%%/*}"
+          name="${TARGET_REPO##*/}"
+
+          echo "owner=$owner" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ steps.target.outputs.owner }}
+          repositories: ${{ steps.target.outputs.name }}
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Process current repo
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ inputs.repo }}
+        run: |
+          set -euo pipefail
+
+          REPO_NAME=${REPO##*/}
+          ISSUE_TITLE="Dependabot PRs for $REPO_NAME"
+
+          echo
+          echo "=== Processing $REPO_NAME ==="
+
+          PR_LIST=$(gh pr list \
+            --repo "$REPO" \
+            --base main \
+            --state open \
+            --json number,title,headRefName,author,labels \
+            --search "label:dependencies")
+
+          PR_LIST=$(echo "$PR_LIST" | jq '[.[] | select(
+            (.author.login | test("dependabot|app/dependabot"; "i")) or
+            (.labels[]?.name | test("dependency"; "i"))
+          )]')
+
+          echo "PRs found for $REPO_NAME:"
+          if [[ $(echo "$PR_LIST" | jq 'length') -eq 0 ]]; then
+            echo "  (none)"
+            exit 0
+          fi
+
+          echo "$PR_LIST" | jq -r '.[] | "  - #\(.number): \(.title) (branch \(.headRefName), author \(.author.login))"'
+
+          PR_DESCRIPTION=$(echo "$PR_LIST" \
+            | jq -r \
+              --arg repo "$REPO" \
+              '.[] | "PR Number: \(.number)\nTitle: \(.title)\nBranch: \(.headRefName)\nURL: https://github.com/\($repo)/pull/\(.number)\n"')
+
+          ISSUE_BODY=$(jq -n --arg repo "$REPO_NAME" --arg desc "$PR_DESCRIPTION" \
+            -r '"Repository: \($repo)\n\n\($desc)"')
+
+          EXISTING_ISSUE=$(gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --limit 100 \
+            --json number,title,url \
+            | jq -c --arg title "$ISSUE_TITLE" 'map(select(.title == $title)) | .[0] // empty')
+
+          if [[ -z "$EXISTING_ISSUE" ]]; then
+            echo "Creating GitHub issue for $REPO_NAME"
+            PAYLOAD=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" \
+              '{ title: $title, body: $body }')
+
+            CREATE=$(printf '%s' "$PAYLOAD" | gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues" \
+              --input -)
+
+            ISSUE_NUMBER=$(echo "$CREATE" | jq -r '.number // empty')
+            ISSUE_URL=$(echo "$CREATE" | jq -r '.html_url // empty')
+          else
+            ISSUE_NUMBER=$(echo "$EXISTING_ISSUE" | jq -r '.number')
+            ISSUE_URL=$(echo "$EXISTING_ISSUE" | jq -r '.url')
+
+            echo "Updating GitHub issue #$ISSUE_NUMBER"
+            NOW=$(date '+%Y-%m-%d %H:%M:%S')
+            UPDATE_PAYLOAD=$(jq -n --arg title "$ISSUE_TITLE" --arg repo "$REPO_NAME" --arg now "$NOW" --arg desc "$PR_DESCRIPTION" \
+              '{ title: $title, body: "Updated on \($now)\nRepository: \($repo)\n\n\($desc)" }')
+
+            printf '%s' "$UPDATE_PAYLOAD" | gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/$ISSUE_NUMBER" \
+              --input - >/dev/null
+          fi
+
+          if [[ -z "$ISSUE_NUMBER" || -z "$ISSUE_URL" ]]; then
+            echo "ERROR: issue reference is empty after create/update; aborting."
+            exit 1
+          fi
+
+          echo "GitHub issue: #$ISSUE_NUMBER"
+          TRACKING_COMMENT="Tracked in #$ISSUE_NUMBER ($ISSUE_URL)"
+
+          for NUM in $(echo "$PR_LIST" | jq -r '.[].number'); do
+            COMMENT_EXISTS=$(
+              gh api --paginate "repos/$REPO/issues/$NUM/comments?per_page=100" \
+                | jq -s --arg body "$TRACKING_COMMENT" 'flatten | any(.body == $body)'
+            )
+
+            if [[ "$COMMENT_EXISTS" == "true" ]]; then
+              echo "Tracking comment already exists on PR #$NUM"
+              continue
+            fi
+
+            echo "Adding tracking comment to PR #$NUM"
+            gh api \
+              --method POST \
+              "repos/$REPO/issues/$NUM/comments" \
+              -f body="$TRACKING_COMMENT" >/dev/null
+          done

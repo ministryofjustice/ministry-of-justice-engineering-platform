@@ -1,0 +1,96 @@
+name: Run Dependabot PR Tracker
+
+on:
+  schedule:
+    - cron: "25 9 * * 5"
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/dependabot-pr-tracker.yml
+      - .github/workflows/run-dependabot-pr-tracker.yml
+
+jobs:
+  biweekly-gate:
+    name: Check biweekly schedule
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      - name: Decide whether this is an active Friday
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TZ: Europe/London
+          ANCHOR_FRIDAY: "2026-05-08"
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" != "schedule" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TODAY=$(date +%F)
+          DELTA_SECONDS=$(( $(date -d "$TODAY" +%s) - $(date -d "$ANCHOR_FRIDAY" +%s) ))
+          DELTA_WEEKS=$(( DELTA_SECONDS / 604800 ))
+
+          if (( DELTA_WEEKS % 2 == 0 )); then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  discover-repos:
+    name: Discover team repositories
+    needs: biweekly-gate
+    if: needs.biweekly-gate.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      TEAM_ORG: ministryofjustice
+      TEAM_SLUG: octo-developer-experience
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+    steps:
+      - name: Create GitHub App token for team discovery
+        id: app-token
+        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        with:
+          app-id: ${{ secrets.REPO_ISSUE_APP_ID }}
+          private-key: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
+          owner: ${{ env.TEAM_ORG }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Build repository matrix
+        id: build-matrix
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          CURRENT_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          matrix_json=$(
+            gh api --paginate "orgs/$TEAM_ORG/teams/$TEAM_SLUG/repos?per_page=100" \
+              | jq -cs --arg current "$CURRENT_REPO" '
+                  {
+                    repo: (([.[][] | .full_name] + [$current]) | unique)
+                  }
+                '
+          )
+
+          echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
+
+  run-tracker:
+    name: Run tracker for ${{ matrix.repo }}
+    needs: discover-repos
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover-repos.outputs.matrix) }}
+    permissions: {}
+    uses: ./.github/workflows/dependabot-pr-tracker.yml
+    with:
+      repo: ${{ matrix.repo }}
+    secrets:
+      APP_ID: ${{ secrets.REPO_ISSUE_APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
