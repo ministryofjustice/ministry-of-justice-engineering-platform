@@ -16,6 +16,7 @@ MOJ_ANALYTICAL_SERVICES_GITHUB_ORGANIZATION_BASE_TEAM_NAME = "everyone"
 API_BASE_URL = "https://api.github.com"
 DEFAULT_LOGGING_LEVEL = "INFO"
 DEFAULT_HTTP_TIMEOUT_SECONDS = 30
+ADDED_USERS_OUTPUT_PATH_ENV = "ADDED_USERS_OUTPUT_PATH"
 
 
 class GithubApiRequestError(RuntimeError):
@@ -74,12 +75,25 @@ def get_config_for_organization(github_organization_name: str) -> tuple[str, str
     )
 
 
+def write_added_users_output(added_users: list[str]) -> None:
+    output_path = os.getenv(ADDED_USERS_OUTPUT_PATH_ENV)
+    if not output_path:
+        return
+
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as output_file:
+        json.dump({"added_users": added_users}, output_file)
+
+
 class GithubTeamSyncService:
     def __init__(self, github_token: str, organization_name: str) -> None:
         self.github_token = github_token
         self.organization_name = organization_name
 
-    def add_all_users_to_team(self, team_slug: str) -> None:
+    def add_all_users_to_team(self, team_slug: str) -> list[str]:
         all_members = self._get_paginated_logins(
             f"/orgs/{self.organization_name}/members",
         )
@@ -88,6 +102,7 @@ class GithubTeamSyncService:
         )
 
         missing_members = sorted(all_members - team_members)
+        added_members: list[str] = []
         missing_2fa_members: list[str] = []
         logging.info(
             f"Organization {self.organization_name}: {len(all_members)} org members, "
@@ -100,6 +115,7 @@ class GithubTeamSyncService:
                     f"/orgs/{self.organization_name}/teams/{team_slug}/memberships/{login}",
                     {"role": "member"},
                 )
+                added_members.append(login)
                 logging.info("Added %s to %s", login, team_slug)
             except GithubApiRequestError as error:
                 if self._is_user_missing_2fa(error):
@@ -112,6 +128,8 @@ class GithubTeamSyncService:
 
         if missing_2fa_members:
             self._report_missing_2fa_users(team_slug, missing_2fa_members)
+
+        return added_members
 
     def _get_paginated_logins(self, path: str) -> set[str]:
         next_url = self._build_url(path, {"per_page": 100})
@@ -251,9 +269,12 @@ def main() -> None:
     organization_name, organization_team_name = get_config_for_organization(
         github_organization_name
     )
-    GithubTeamSyncService(github_token, organization_name).add_all_users_to_team(
+    added_users = GithubTeamSyncService(
+        github_token, organization_name
+    ).add_all_users_to_team(
         organization_team_name
     )
+    write_added_users_output(added_users)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,31 @@ on:
         required: false
         type: string
         default: "3.11"
+      post-onboarding-notifications:
+        description: "Post @mention notifications for newly added users"
+        required: false
+        type: boolean
+        default: true
+      onboarding-notification-repo:
+        description: "Repository that stores onboarding notification issues"
+        required: false
+        type: string
+        default: "ministryofjustice/ministry-of-justice-engineering-platform"
+      ministryofjustice-onboarding-issue-number:
+        description: "Issue number for ministryofjustice onboarding notifications"
+        required: false
+        type: string
+        default: "21"
+      moj-analytical-services-onboarding-issue-number:
+        description: "Issue number for moj-analytical-services onboarding notifications"
+        required: false
+        type: string
+        default: "22"
+      terms-of-use-url:
+        description: "Optional URL included in onboarding notification comments"
+        required: false
+        type: string
+        default: ""
     secrets:
       app-id:
         description: "GitHub App ID"
@@ -75,6 +100,63 @@ jobs:
           ADMIN_GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           GITHUB_ORGANIZATION_NAME: ${{ inputs['organization-name'] }}
           LOGGING_LEVEL: ${{ secrets['logging-level'] }}
+          ADDED_USERS_OUTPUT_PATH: ${{ runner.temp }}/added-users.json
+
+      - name: Post Onboarding Notifications
+        if: success() && inputs['post-onboarding-notifications']
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          ORGANIZATION_NAME: ${{ inputs['organization-name'] }}
+          NOTIFICATION_REPO: ${{ inputs['onboarding-notification-repo'] }}
+          ISSUE_MINISTRYOFJUSTICE: ${{ inputs['ministryofjustice-onboarding-issue-number'] }}
+          ISSUE_MOJ_ANALYTICAL_SERVICES: ${{ inputs['moj-analytical-services-onboarding-issue-number'] }}
+          TERMS_OF_USE_URL: ${{ inputs['terms-of-use-url'] }}
+          ADDED_USERS_OUTPUT_PATH: ${{ runner.temp }}/added-users.json
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f "$ADDED_USERS_OUTPUT_PATH" ]]; then
+            echo "No added users output file found; skipping notifications"
+            exit 0
+          fi
+
+          mapfile -t ADDED_USERS < <(jq -r '.added_users[]?' "$ADDED_USERS_OUTPUT_PATH")
+          if [[ "${#ADDED_USERS[@]}" -eq 0 ]]; then
+            echo "No new users were added; skipping notifications"
+            exit 0
+          fi
+
+          case "$ORGANIZATION_NAME" in
+            "ministryofjustice")
+              ISSUE_NUMBER="$ISSUE_MINISTRYOFJUSTICE"
+              ;;
+            "moj-analytical-services")
+              ISSUE_NUMBER="$ISSUE_MOJ_ANALYTICAL_SERVICES"
+              ;;
+            *)
+              echo "No onboarding issue mapping for organization: $ORGANIZATION_NAME"
+              exit 0
+              ;;
+          esac
+
+          COMMENT_BODY="Users added to root team for $ORGANIZATION_NAME:\n\n"
+          for user in "${ADDED_USERS[@]}"; do
+            COMMENT_BODY+="- @$user\\n"
+          done
+
+          if [[ -n "$TERMS_OF_USE_URL" ]]; then
+            COMMENT_BODY+="\\nPlease review terms of use: $TERMS_OF_USE_URL\\n"
+          fi
+
+          COMMENT_BODY+="\\nPlease acknowledge in this thread once reviewed."
+
+          jq -n --arg body "$COMMENT_BODY" '{body: $body}' > "$RUNNER_TEMP/onboarding-comment.json"
+          gh api \
+            --method POST \
+            "repos/$NOTIFICATION_REPO/issues/$ISSUE_NUMBER/comments" \
+            --input "$RUNNER_TEMP/onboarding-comment.json" >/dev/null
+
+          echo "Posted onboarding notification for ${#ADDED_USERS[@]} users to issue #$ISSUE_NUMBER"
 
       - name: Report Failure to Slack
         if: failure() && env.SLACK_WEBHOOK_URL != ''

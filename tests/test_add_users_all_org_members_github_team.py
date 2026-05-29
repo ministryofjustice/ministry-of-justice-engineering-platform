@@ -9,6 +9,7 @@ from scripts.add_users_all_org_members_github_team import (
     GithubTeamSyncService,
     get_config_for_organization,
     get_environment_variables,
+    write_added_users_output,
 )
 
 
@@ -220,9 +221,10 @@ class TestTeamSyncBehaviour(unittest.TestCase):
             {"alice"},
         ]
 
-        self.service.add_all_users_to_team("all-org-members")
+        added_users = self.service.add_all_users_to_team("all-org-members")
 
         self.assertEqual(mock_put.call_count, 2)
+        self.assertEqual(added_users, ["bob", "charlie"])
         self.assertFalse(mock_report_missing_2fa.called)
 
     @patch.object(GithubTeamSyncService, "_get_paginated_logins")
@@ -247,9 +249,10 @@ class TestTeamSyncBehaviour(unittest.TestCase):
         )
         mock_put.side_effect = [None, no_2fa_error]
 
-        self.service.add_all_users_to_team("all-org-members")
+        added_users = self.service.add_all_users_to_team("all-org-members")
 
         mock_report_missing_2fa.assert_called_once_with("all-org-members", ["bob"])
+        self.assertEqual(added_users, ["alice"])
 
     @patch.object(GithubTeamSyncService, "_get_paginated_logins")
     @patch.object(GithubTeamSyncService, "_put")
@@ -291,6 +294,22 @@ class TestTeamSyncBehaviour(unittest.TestCase):
         self.assertIn("Team: `all-org-members` in `ministryofjustice`.", content)
         self.assertIn("- `alice`", content)
         self.assertIn("- `charlie`", content)
+
+    def test_write_added_users_output_writes_expected_json(self) -> None:
+        with tempfile.NamedTemporaryFile(mode="r+", delete=True) as output_file:
+            with patch.dict(
+                "os.environ", {"ADDED_USERS_OUTPUT_PATH": output_file.name}, clear=False
+            ):
+                write_added_users_output(["alice", "bob"])
+
+            output_file.seek(0)
+            content = output_file.read()
+
+        self.assertEqual(content, '{"added_users": ["alice", "bob"]}')
+
+    def test_write_added_users_output_noop_without_env_var(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            write_added_users_output(["alice"])
 
 
 if __name__ == "__main__":
