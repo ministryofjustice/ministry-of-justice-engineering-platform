@@ -278,7 +278,7 @@ jobs:
             )
 
             if [[ "$COMMENT_EXISTS" == "true" ]]; then
-              echo "Tracking comment already exists on PR #$NUM"
+              echo "Tracking comments already exists on PR #$NUM"
               continue
             fi
 
