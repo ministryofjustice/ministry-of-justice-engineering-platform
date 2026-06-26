@@ -117,6 +117,7 @@ jobs:
             | jq -c --arg title "$ISSUE_TITLE" 'map(select(.title == $title)) | .[0] // empty')
 
           if [[ -z "$EXISTING_ISSUE" ]]; then
+            CREATED_ISSUE=true
             echo "Creating GitHub issue for $REPO_NAME"
             PAYLOAD=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" \
               '{ title: $title, body: $body }')
@@ -131,6 +132,7 @@ jobs:
             ISSUE_URL=$(echo "$CREATE" | jq -r '.html_url // empty')
             ISSUE_NODE_ID=$(echo "$CREATE" | jq -r '.node_id // empty')
           else
+            CREATED_ISSUE=false
             ISSUE_NUMBER=$(echo "$EXISTING_ISSUE" | jq -r '.number')
             ISSUE_URL=$(echo "$EXISTING_ISSUE" | jq -r '.url')
             ISSUE_NODE_ID=$(echo "$EXISTING_ISSUE" | jq -r '.id // empty')
@@ -260,13 +262,15 @@ jobs:
             gh api graphql -f query="mutation(\$projectId:ID!, \$itemId:ID!, \$fieldId:ID!, \$numberValue:Float!) { updateProjectV2ItemFieldValue(input: { projectId:\$projectId, itemId:\$itemId, fieldId:\$fieldId, value:{ number:\$numberValue } }) { projectV2Item { id } } }" -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$field_id" -F numberValue="$number_value" >/dev/null
           }
 
-          set_single_select_field "Status" "👇 To do"
-          set_single_select_field "🤩 Refined?" "👎 Unrefined"
-          set_number_field "Estimation" "3"
-          set_single_select_field "👏 Team" "$TEAM_VALUE"
-          set_single_select_field "🚀 Objective" "💪🏻 Strong Foundation - Visibility & Remediation"
-          set_single_select_field "🧩 Quarter" "Quarter 1"
-          set_single_select_field "🤨 Planned?" "❌ Unplanned"
+          if [[ "$CREATED_ISSUE" == "true" ]]; then
+            set_single_select_field "Status" "👇 To do"
+            set_single_select_field "🤩 Refined?" "👎 Unrefined"
+            set_number_field "Estimation" "2"
+            set_single_select_field "👏 Team" "$TEAM_VALUE"
+            set_single_select_field "🚀 Objective" "💪🏻 Strong Foundation - Visibility & Remediation"
+            set_single_select_field "🧩 Quarter" "Quarter 1"
+            set_single_select_field "🤨 Planned?" "❌ Unplanned"
+          fi
 
           echo "GitHub issue: #$ISSUE_NUMBER"
           TRACKING_COMMENT="Tracked in #$ISSUE_NUMBER ($ISSUE_URL)"
