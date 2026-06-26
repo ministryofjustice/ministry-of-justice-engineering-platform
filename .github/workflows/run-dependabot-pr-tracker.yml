@@ -3,6 +3,7 @@ name: Run Dependabot PR Tracker
 on:
   schedule:
     - cron: "25 9 * * 5"
+      timezone: "Europe/London"
   workflow_dispatch:
   pull_request:
     branches: [main]
@@ -61,6 +62,7 @@ jobs:
           private-key: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
           owner: ${{ env.TEAM_ORG }}
           repositories: ${{ github.event.repository.name }}
+          permission-members: read
 
       - name: Build repository matrix
         id: build-matrix
