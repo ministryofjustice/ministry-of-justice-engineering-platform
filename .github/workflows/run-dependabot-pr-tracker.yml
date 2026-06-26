@@ -61,6 +61,7 @@ jobs:
           app-id: ${{ secrets.REPO_ISSUE_APP_ID }}
           private-key: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
           owner: ${{ env.TEAM_ORG }}
+          repositories: ${{ github.event.repository.name }}
           permission-members: read
 
       - name: Build repository matrix
