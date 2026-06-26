@@ -3,6 +3,7 @@ name: Run Dependabot PR Tracker
 on:
   schedule:
     - cron: "25 9 * * 5"
+      timezone: "Europe/London"
   workflow_dispatch:
   pull_request:
     branches: [main]
@@ -55,12 +56,12 @@ jobs:
     steps:
       - name: Create GitHub App token for team discovery
         id: app-token
-        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        uses: actions/create-github-app-token@v3 #todo sha pin
         with:
           app-id: ${{ secrets.REPO_ISSUE_APP_ID }}
           private-key: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
           owner: ${{ env.TEAM_ORG }}
-          repositories: ${{ github.event.repository.name }}
+          permission-members: read
 
       - name: Build repository matrix
         id: build-matrix

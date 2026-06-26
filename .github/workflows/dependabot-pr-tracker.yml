@@ -37,12 +37,15 @@ jobs:
 
       - name: Create GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        uses: actions/create-github-app-token@v3 #todo sha pin
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ steps.target.outputs.owner }}
           repositories: ${{ steps.target.outputs.name }}
+          permission-issues: write
+          permission-organization-projects: write
+          permission-pull-requests: read
 
       - name: Install prerequisites
         run: |
@@ -58,6 +61,21 @@ jobs:
 
           REPO_NAME=${REPO##*/}
           ISSUE_TITLE="Dependabot PRs for $REPO_NAME"
+
+          case "$REPO_NAME" in
+            developer-experience-documentation|ministry-of-justice-developer-portal|ministry-of-justice-tech-radar|octo-access)
+              TEAM_VALUE="👾 Engineering Portal"
+              ;;
+            ministry-of-justice-engineering-platform|ministry-of-justice-github-analysis|moj-github-discovery)
+              TEAM_VALUE="🔧 Engineering Platform"
+              ;;
+            *)
+              TEAM_VALUE="🔧 Engineering Platform"
+              ;;
+          esac
+
+          PROJECT_OWNER="ministryofjustice"
+          PROJECT_TITLE="👩‍💻 Developer Experience Team"
 
           echo
           echo "=== Processing $REPO_NAME ==="
@@ -94,7 +112,7 @@ jobs:
             --repo "$REPO" \
             --state open \
             --limit 100 \
-            --json number,title,url \
+            --json id,number,title,url \
             | jq -c --arg title "$ISSUE_TITLE" 'map(select(.title == $title)) | .[0] // empty')
 
           if [[ -z "$EXISTING_ISSUE" ]]; then
@@ -110,9 +128,11 @@ jobs:
 
             ISSUE_NUMBER=$(echo "$CREATE" | jq -r '.number // empty')
             ISSUE_URL=$(echo "$CREATE" | jq -r '.html_url // empty')
+            ISSUE_NODE_ID=$(echo "$CREATE" | jq -r '.node_id // empty')
           else
             ISSUE_NUMBER=$(echo "$EXISTING_ISSUE" | jq -r '.number')
             ISSUE_URL=$(echo "$EXISTING_ISSUE" | jq -r '.url')
+            ISSUE_NODE_ID=$(echo "$EXISTING_ISSUE" | jq -r '.id // empty')
 
             echo "Updating GitHub issue #$ISSUE_NUMBER"
             NOW=$(date '+%Y-%m-%d %H:%M:%S')
@@ -126,10 +146,83 @@ jobs:
               --input - >/dev/null
           fi
 
-          if [[ -z "$ISSUE_NUMBER" || -z "$ISSUE_URL" ]]; then
+          if [[ -z "$ISSUE_NUMBER" || -z "$ISSUE_URL" || -z "$ISSUE_NODE_ID" ]]; then
             echo "ERROR: issue reference is empty after create/update; aborting."
             exit 1
           fi
+
+          PROJECT_DATA=$(gh api graphql -f query='query($owner:String!, $title:String!) { organization(login:$owner) { projectsV2(first: 20, query: $title) { nodes { id title fields(first: 50) { nodes { __typename ... on ProjectV2Field { id name } ... on ProjectV2SingleSelectField { id name options { id name } } ... on ProjectV2IterationField { id name configuration { iterations { id title startDate } } } } } } } } }' -f owner="$PROJECT_OWNER" -f title="$PROJECT_TITLE")
+
+          PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r --arg title "$PROJECT_TITLE" '.data.organization.projectsV2.nodes[] | select(.title == $title) | .id' | head -n1)
+          if [[ -z "$PROJECT_ID" ]]; then
+            echo "ERROR: project '$PROJECT_TITLE' not found under organization '$PROJECT_OWNER'."
+            exit 1
+          fi
+
+          PROJECT_ITEM_ID=$(gh api graphql -f query='query($issueId:ID!, $projectId:ID!) { node(id:$issueId) { ... on Issue { projectItems(first: 100) { nodes { id project { id } } } } } }' -f issueId="$ISSUE_NODE_ID" -f projectId="$PROJECT_ID" | jq -r --arg project "$PROJECT_ID" '.data.node.projectItems.nodes[]? | select(.project.id == $project) | .id' | head -n1)
+
+          if [[ -z "$PROJECT_ITEM_ID" ]]; then
+            PROJECT_ITEM_ID=$(gh api graphql -f query='mutation($projectId:ID!, $contentId:ID!) { addProjectV2ItemById(input:{ projectId:$projectId, contentId:$contentId }) { item { id } } }' -f projectId="$PROJECT_ID" -f contentId="$ISSUE_NODE_ID" | jq -r '.data.addProjectV2ItemById.item.id // empty')
+          fi
+
+          if [[ -z "$PROJECT_ITEM_ID" ]]; then
+            echo "ERROR: failed to add/fetch issue project item for project '$PROJECT_TITLE'."
+            exit 1
+          fi
+
+          get_field_id() {
+            local field_name="$1"
+            echo "$PROJECT_DATA" | jq -r --arg name "$field_name" '.data.organization.projectsV2.nodes[].fields.nodes[]? | select(.name == $name) | .id // empty' | head -n1
+          }
+
+          get_single_select_option_id() {
+            local field_name="$1"
+            local option_name="$2"
+            echo "$PROJECT_DATA" | jq -r --arg field "$field_name" --arg option "$option_name" '.data.organization.projectsV2.nodes[].fields.nodes[]? | select(.name == $field) | .options[]? | select(.name == $option) | .id // empty' | head -n1
+          }
+
+          set_single_select_field() {
+            local field_name="$1"
+            local option_value="$2"
+
+            local field_id
+            field_id=$(get_field_id "$field_name")
+            if [[ -z "$field_id" ]]; then
+              echo "ERROR: project field '$field_name' not found."
+              exit 1
+            fi
+
+            local option_id
+            option_id=$(get_single_select_option_id "$field_name" "$option_value")
+            if [[ -z "$option_id" ]]; then
+              echo "ERROR: option '$option_value' not found for field '$field_name'."
+              exit 1
+            fi
+
+            gh api graphql -f query='mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $optionId:String!) { updateProjectV2ItemFieldValue(input: { projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ singleSelectOptionId:$optionId } }) { projectV2Item { id } } }' -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$field_id" -f optionId="$option_id" >/dev/null
+          }
+
+          set_number_field() {
+            local field_name="$1"
+            local number_value="$2"
+
+            local field_id
+            field_id=$(get_field_id "$field_name")
+            if [[ -z "$field_id" ]]; then
+              echo "ERROR: project field '$field_name' not found."
+              exit 1
+            fi
+
+            gh api graphql -f query='mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $numberValue:Float!) { updateProjectV2ItemFieldValue(input: { projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ number:$numberValue } }) { projectV2Item { id } } }' -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$field_id" -F numberValue="$number_value" >/dev/null
+          }
+
+          set_single_select_field "Status" "🚀 In Progress"
+          set_single_select_field "🤩 Refined?" "👎 Unrefined"
+          set_number_field "📏 Estimation" "3"
+          set_single_select_field "👏 Team" "$TEAM_VALUE"
+          set_single_select_field "🚀 Objective" "💪🏻 Strong Foundation - Visibility & Remediation"
+          set_single_select_field "🧩 Quarter" "Quarter 1"
+          set_single_select_field "🤨 Planned?" "❌ Unplanned"
 
           echo "GitHub issue: #$ISSUE_NUMBER"
           TRACKING_COMMENT="Tracked in #$ISSUE_NUMBER ($ISSUE_URL)"
