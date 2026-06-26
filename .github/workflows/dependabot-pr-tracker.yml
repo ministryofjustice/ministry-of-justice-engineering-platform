@@ -260,7 +260,7 @@ jobs:
             gh api graphql -f query="mutation(\$projectId:ID!, \$itemId:ID!, \$fieldId:ID!, \$numberValue:Float!) { updateProjectV2ItemFieldValue(input: { projectId:\$projectId, itemId:\$itemId, fieldId:\$fieldId, value:{ number:\$numberValue } }) { projectV2Item { id } } }" -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$field_id" -F numberValue="$number_value" >/dev/null
           }
 
-          set_single_select_field "Status" "🚀 In Progress"
+          set_single_select_field "Status" "👇 To do"
           set_single_select_field "🤩 Refined?" "👎 Unrefined"
           set_number_field "📏 Estimation" "3"
           set_single_select_field "👏 Team" "$TEAM_VALUE"
