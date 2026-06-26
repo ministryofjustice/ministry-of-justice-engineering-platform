@@ -262,7 +262,7 @@ jobs:
 
           set_single_select_field "Status" "👇 To do"
           set_single_select_field "🤩 Refined?" "👎 Unrefined"
-          set_number_field "📏 Estimation" "3"
+          set_number_field "Estimation" "3"
           set_single_select_field "👏 Team" "$TEAM_VALUE"
           set_single_select_field "🚀 Objective" "💪🏻 Strong Foundation - Visibility & Remediation"
           set_single_select_field "🧩 Quarter" "Quarter 1"
