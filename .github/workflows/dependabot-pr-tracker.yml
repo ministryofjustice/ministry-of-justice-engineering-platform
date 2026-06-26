@@ -232,15 +232,15 @@ jobs:
             local field_id
             field_id=$(get_field_id "$field_name")
             if [[ -z "$field_id" ]]; then
-              echo "ERROR: project field '$field_name' not found."
-              exit 1
+              echo "WARNING: project field '$field_name' not found; skipping."
+              return 0
             fi
 
             local option_id
             option_id=$(get_single_select_option_id "$field_name" "$option_value")
             if [[ -z "$option_id" ]]; then
-              echo "ERROR: option '$option_value' not found for field '$field_name'."
-              exit 1
+              echo "WARNING: option '$option_value' not found for field '$field_name'; skipping."
+              return 0
             fi
 
             gh api graphql -f query="mutation(\$projectId:ID!, \$itemId:ID!, \$fieldId:ID!, \$optionId:String!) { updateProjectV2ItemFieldValue(input: { projectId:\$projectId, itemId:\$itemId, fieldId:\$fieldId, value:{ singleSelectOptionId:\$optionId } }) { projectV2Item { id } } }" -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$field_id" -f optionId="$option_id" >/dev/null
@@ -253,8 +253,8 @@ jobs:
             local field_id
             field_id=$(get_field_id "$field_name")
             if [[ -z "$field_id" ]]; then
-              echo "ERROR: project field '$field_name' not found."
-              exit 1
+              echo "WARNING: project field '$field_name' not found; skipping."
+              return 0
             fi
 
             gh api graphql -f query="mutation(\$projectId:ID!, \$itemId:ID!, \$fieldId:ID!, \$numberValue:Float!) { updateProjectV2ItemFieldValue(input: { projectId:\$projectId, itemId:\$itemId, fieldId:\$fieldId, value:{ number:\$numberValue } }) { projectV2Item { id } } }" -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$field_id" -F numberValue="$number_value" >/dev/null
