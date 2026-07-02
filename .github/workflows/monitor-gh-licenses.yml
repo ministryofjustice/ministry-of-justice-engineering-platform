@@ -2,6 +2,9 @@ name: Monitor GitHub License Availability
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/204-monitor-gh-licenses
   schedule:
     - cron: "0 9 * * 1-5"
 
