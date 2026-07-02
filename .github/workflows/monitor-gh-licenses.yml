@@ -18,17 +18,10 @@ jobs:
             contents: read
         steps:
 
-            - name: Generate GitHub App Token
-              id: generate-token
-              uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
-              with:
-                app-id: ${{ secrets.APP_ID }}
-                private-key: ${{ secrets.APP_PRIVATE_KEY }}
-                owner: "ministryofjustice"
-
             - name: Monitor GitHub License Availability
               env:
-                GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+                GITHUB_TOKEN: ${{ secrets.MONITOR_GH_LICENSES_PAT }}
+
               run: |
                 total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
                 total_seats_consumed=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_consumed')
@@ -64,42 +57,42 @@ jobs:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} #developer-experience-alerts
               if: ${{ env.remaining_licenses <= 10 }}
 
-            - name: Slack failure notification
-              uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-              with:
-                webhook-type: incoming-webhook
-                payload: |
-                  {
-                    "blocks": [
-                      {
-                        "type": "section",
-                        "text": {
-                          "type": "mrkdwn",
-                          "text": ":no_entry: Failed GitHub Action:"
-                        }
-                      },
-                      {
-                        "type": "section",
-                        "fields": [
-                          {
-                            "type": "mrkdwn",
-                            "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
-                          },
-                          {
-                            "type": "mrkdwn",
-                            "text": "*Job:*\n${{ github.job }}"
-                          },
-                          {
-                            "type": "mrkdwn",
-                            "text": "*Repo:*\n${{ github.repository }}"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-              env:
-                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-              if: ${{ failure() }}
+            # - name: Slack failure notification
+            #   uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+            #   with:
+            #     webhook-type: incoming-webhook
+            #     payload: |
+            #       {
+            #         "blocks": [
+            #           {
+            #             "type": "section",
+            #             "text": {
+            #               "type": "mrkdwn",
+            #               "text": ":no_entry: Failed GitHub Action:"
+            #             }
+            #           },
+            #           {
+            #             "type": "section",
+            #             "fields": [
+            #               {
+            #                 "type": "mrkdwn",
+            #                 "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
+            #               },
+            #               {
+            #                 "type": "mrkdwn",
+            #                 "text": "*Job:*\n${{ github.job }}"
+            #               },
+            #               {
+            #                 "type": "mrkdwn",
+            #                 "text": "*Repo:*\n${{ github.repository }}"
+            #               }
+            #             ]
+            #           }
+            #         ]
+            #       }
+            #   env:
+            #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+            #   if: ${{ failure() }}
 
 
 
