@@ -2,28 +2,24 @@ name: Monitor GitHub License Availability
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/204-monitor-gh-licenses
+
   schedule:
     - cron: "0 9 * * 1-5"
 
 permissions: {}
+
 env:
-  LICENSE_THRESHOLD: 50
+  LICENSE_THRESHOLD: 10
 
 jobs:
     monitor-github-licenses:
         name: Monitor GitHub License Availability
         runs-on: ubuntu-latest
-        permissions:
-            contents: read
         steps:
-
             - name: Monitor GitHub License Availability
               id: monitor-licenses
               env:
-                GITHUB_TOKEN: ${{ secrets.MONITOR_GH_LICENSES_PAT }}
+                GITHUB_TOKEN: ${{ secrets.MONITOR_GH_LICENSES_PAT }}  # tied to personal account with access to the GitHub Enterprise
 
               run: |
                 total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
@@ -97,10 +93,3 @@ jobs:
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
               if: ${{ failure() }}
-
-
-
-
-                
-                
-
