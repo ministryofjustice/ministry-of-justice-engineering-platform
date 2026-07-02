@@ -19,6 +19,7 @@ jobs:
         steps:
 
             - name: Monitor GitHub License Availability
+              id: monitor-licenses
               env:
                 GITHUB_TOKEN: ${{ secrets.MONITOR_GH_LICENSES_PAT }}
 
@@ -26,9 +27,9 @@ jobs:
                 total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
                 total_seats_consumed=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_consumed')
                 remaining_licenses=$((total_seats_purchased - total_seats_consumed))
-                echo "total_seats_purchased=$total_seats_purchased" #>> $GITHUB_ENV
-                echo "total_seats_consumed=$total_seats_consumed" #>> $GITHUB_ENV
-                echo "remaining_licenses=$remaining_licenses" #>> $GITHUB_ENV
+                echo "total_seats_purchased=$total_seats_purchased" >> $GITHUB_OUTPUT
+                echo "total_seats_consumed=$total_seats_consumed" >> $GITHUB_OUTPUT
+                echo "remaining_licenses=$remaining_licenses" >> $GITHUB_OUTPUT
 
             - name: Notify Slack if licenses are low 
               uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
@@ -48,14 +49,14 @@ jobs:
                         "type": "section",
                         "text": {
                           "type": "mrkdwn",
-                          "text": "There are only ${{ env.remaining_licenses }} available licenses of a total of ${{ env.total_seats_purchased }}. Refer to the <https://ministryofjustice.github.io/developer-experience-documentation/runbooks/how-to-remove-a-dormant-github-user.html|runbook: How to remove a dormant GitHub user> to free up available licenses."
+                          "text": "There are only ${{ steps.monitor-licenses.outputs.remaining_licenses }} available licenses of a total of ${{ steps.monitor-licenses.outputs.total_seats_purchased }}. Refer to the runbook:<https://ministryofjustice.github.io/developer-experience-documentation/runbooks/how-to-remove-a-dormant-github-user.html|How to remove a dormant GitHub user> to free up available licenses."
                         }
                       }
                     ]
                   }
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} #developer-experience-alerts
-              if: ${{ env.remaining_licenses <= 10 }}
+              if: ${{ steps.monitor-licenses.outputs.remaining_licenses <= 50 }}
 
             # - name: Slack failure notification
             #   uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
