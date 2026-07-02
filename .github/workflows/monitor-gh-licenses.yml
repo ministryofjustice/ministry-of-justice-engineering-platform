@@ -26,9 +26,9 @@ jobs:
                 total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
                 total_seats_consumed=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_consumed')
                 remaining_licenses=$((total_seats_purchased - total_seats_consumed))
-                echo "total_seats_purchased=$total_seats_purchased" >> $GITHUB_ENV
-                echo "total_seats_consumed=$total_seats_consumed" >> $GITHUB_ENV
-                echo "remaining_licenses=$remaining_licenses" >> $GITHUB_ENV
+                echo "total_seats_purchased=$total_seats_purchased" #>> $GITHUB_ENV
+                echo "total_seats_consumed=$total_seats_consumed" #>> $GITHUB_ENV
+                echo "remaining_licenses=$remaining_licenses" #>> $GITHUB_ENV
 
             - name: Notify Slack if licenses are low 
               uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
