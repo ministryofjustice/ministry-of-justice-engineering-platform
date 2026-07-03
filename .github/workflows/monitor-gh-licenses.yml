@@ -7,89 +7,90 @@ on:
     - cron: "0 9 * * 1-5"
 
 permissions: {}
-
 env:
   LICENSE_THRESHOLD: 10
 
 jobs:
-    monitor-github-licenses:
-        name: Monitor GitHub License Availability
-        runs-on: ubuntu-latest
-        steps:
-            - name: Monitor GitHub License Availability
-              id: monitor-licenses
-              env:
-                GITHUB_TOKEN: ${{ secrets.MONITOR_GH_LICENSES_PAT }}  # tied to personal account with access to the GitHub Enterprise
+  monitor-github-licenses:
+    name: Monitor GitHub License Availability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Monitor GitHub License Availability
+        id: monitor-licenses
+        env:
+          GITHUB_TOKEN: ${{ secrets.MONITOR_GH_LICENSES_PAT }}  # tied to personal account with access to the GitHub Enterprise
 
-              run: |
-                total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
-                total_seats_consumed=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_consumed')
-                remaining_licenses=$((total_seats_purchased - total_seats_consumed))
+        run: |
+          total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
+          total_seats_consumed=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_consumed')
+          remaining_licenses=$((total_seats_purchased - total_seats_consumed))
 
-                echo "total_seats_purchased=$total_seats_purchased" >> $GITHUB_OUTPUT
-                echo "total_seats_consumed=$total_seats_consumed" >> $GITHUB_OUTPUT
-                echo "remaining_licenses=$remaining_licenses" >> $GITHUB_OUTPUT
+          {
+            echo "total_seats_purchased=$total_seats_purchased"
+            echo "total_seats_consumed=$total_seats_consumed"
+            echo "remaining_licenses=$remaining_licenses"
+          } >> "$GITHUB_OUTPUT"
 
-            - name: Notify Slack if licenses are low 
-              uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-              with:
-                webhook-type: incoming-webhook
-                payload: |
-                  {
-                    "blocks": [
-                      {
-                        "type": "section",
-                        "text": {
-                          "type": "mrkdwn",
-                          "text": ":warning: GitHub License Availability is low!"
-                        }
-                      },
-                      {
-                        "type": "section",
-                        "text": {
-                          "type": "mrkdwn",
-                          "text": "There are only ${{ steps.monitor-licenses.outputs.remaining_licenses }} available licenses of a total of ${{ steps.monitor-licenses.outputs.total_seats_purchased }}. Refer to the runbook: <https://ministryofjustice.github.io/developer-experience-documentation/runbooks/how-to-remove-a-dormant-github-user.html|How to remove a dormant GitHub user> to free up available licenses."
-                        }
-                      }
-                    ]
+      - name: Notify Slack if licenses are low
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":warning: GitHub License Availability is low!"
                   }
-              env:
-                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} #developer-experience-alerts
-              if: ${{ steps.monitor-licenses.outputs.remaining_licenses <= env.LICENSE_THRESHOLD }}
-
-            - name: Slack failure notification
-              uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-              with:
-                webhook-type: incoming-webhook
-                payload: |
-                  {
-                    "blocks": [
-                      {
-                        "type": "section",
-                        "text": {
-                          "type": "mrkdwn",
-                          "text": ":no_entry: Failed GitHub Action:"
-                        }
-                      },
-                      {
-                        "type": "section",
-                        "fields": [
-                          {
-                            "type": "mrkdwn",
-                            "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
-                          },
-                          {
-                            "type": "mrkdwn",
-                            "text": "*Job:*\n${{ github.job }}"
-                          },
-                          {
-                            "type": "mrkdwn",
-                            "text": "*Repo:*\n${{ github.repository }}"
-                          }
-                        ]
-                      }
-                    ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "There are only ${{ steps.monitor-licenses.outputs.remaining_licenses }} available licenses of a total of ${{ steps.monitor-licenses.outputs.total_seats_purchased }}. Refer to the runbook: <https://ministryofjustice.github.io/developer-experience-documentation/runbooks/how-to-remove-a-dormant-github-user.html|How to remove a dormant GitHub user> to free up available licenses."
                   }
-              env:
-                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-              if: ${{ failure() }}
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  #developer-experience-alerts
+        if: ${{ steps.monitor-licenses.outputs.remaining_licenses <= env.LICENSE_THRESHOLD }}
+
+      - name: Slack failure notification
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":no_entry: Failed GitHub Action:"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job:*\n${{ github.job }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repo:*\n${{ github.repository }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() }}
