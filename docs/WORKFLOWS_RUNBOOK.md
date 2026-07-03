@@ -8,6 +8,7 @@ This runbook provides operational guidance for the Engineering Platform workflow
 - **`add-members-to-root-team-moj.yml`** - Adds members to root team for ministryofjustice org
 - **`add-members-to-root-team-mojas.yml`** - Adds members to root team for moj-analytical-services org
 - **`reusable-add-members-to-root-team.yml`** - Reusable workflow for member management
+- **`reusable-add-to-devex-project.yml`** - Reusable workflow that adds new non-bot issues to the DevX project and applies triage metadata
 
 ### CI/CD Workflows
 - **`dependency-review.yml`** - Reviews dependency changes for security vulnerabilities

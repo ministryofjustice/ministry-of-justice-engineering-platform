@@ -1,0 +1,156 @@
+---
+name: Reusable - Add New Issue to DevX Project
+
+on:
+  workflow_call:
+    inputs:
+      team:
+        description: "Team option to set on the DevX project item"
+        required: true
+        type: string
+      project-owner:
+        description: "GitHub organization that owns the project"
+        required: false
+        type: string
+        default: "ministryofjustice"
+      project-title:
+        description: "GitHub Project V2 title"
+        required: false
+        type: string
+        default: "Developer Experience Team"
+      team-field-name:
+        description: "Project field used to store the team value"
+        required: false
+        type: string
+        default: "👏 Team"
+      unrefined-label:
+        description: "Issue label to add when a new issue is opened"
+        required: false
+        type: string
+        default: "Unrefined"
+    secrets:
+      app-id:
+        description: "GitHub App ID"
+        required: true
+      app-private-key:
+        description: "GitHub App private key"
+        required: true
+
+permissions: {}
+
+jobs:
+  add-to-devex-project:
+    name: Add Issue to DevX Project
+    runs-on: ubuntu-latest
+    if: github.event.issue.user.type != 'Bot' && !endsWith(github.event.issue.user.login, '[bot]')
+    permissions:
+      contents: read
+    steps:
+      - name: Parse repository
+        id: repo
+        env:
+          TARGET_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo "owner=${TARGET_REPO%%/*}" >> "$GITHUB_OUTPUT"
+          echo "name=${TARGET_REPO##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        with:
+          app-id: ${{ secrets['app-id'] }}
+          private-key: ${{ secrets['app-private-key'] }}
+          owner: ${{ steps.repo.outputs.owner }}
+          repositories: ${{ steps.repo.outputs.name }}
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Add issue to DevX project and label it
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NODE_ID: ${{ github.event.issue.node_id }}
+          PROJECT_OWNER: ${{ inputs['project-owner'] }}
+          PROJECT_TITLE: ${{ inputs['project-title'] }}
+          TEAM_FIELD_NAME: ${{ inputs['team-field-name'] }}
+          TEAM_VALUE: ${{ inputs.team }}
+          UNREFINED_LABEL: ${{ inputs['unrefined-label'] }}
+        run: |
+          set -euo pipefail
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "repos/$REPO/issues/$ISSUE_NUMBER/labels" \
+            -f labels[]="$UNREFINED_LABEL" >/dev/null
+
+          PROJECT_QUERY=$(cat <<'GRAPHQL'
+          query($owner:String!, $title:String!) {
+            organization(login:$owner) {
+              projectsV2(first: 20, query: $title) {
+                nodes {
+                  id
+                  title
+                  fields(first: 50) {
+                    nodes {
+                      __typename
+                      ... on ProjectV2Field {
+                        id
+                        name
+                      }
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        name
+                        options {
+                          id
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          GRAPHQL
+          )
+
+          PROJECT_DATA=$(gh api graphql -f query="$PROJECT_QUERY" -f owner="$PROJECT_OWNER" -f title="$PROJECT_TITLE")
+
+          PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r --arg title "$PROJECT_TITLE" '.data.organization.projectsV2.nodes[] | select(.title == $title) | .id' | head -n1)
+          if [[ -z "$PROJECT_ID" ]]; then
+            echo "ERROR: project '$PROJECT_TITLE' not found under '$PROJECT_OWNER'."
+            exit 1
+          fi
+
+          PROJECT_ITEM_ID=$(gh api graphql -f query="query(\$issueId:ID!) { node(id:\$issueId) { ... on Issue { projectItems(first: 100) { nodes { id project { id } } } } } }" -f issueId="$ISSUE_NODE_ID" | jq -r --arg project "$PROJECT_ID" '.data.node.projectItems.nodes[]? | select(.project.id == $project) | .id' | head -n1)
+
+          if [[ -z "$PROJECT_ITEM_ID" ]]; then
+            PROJECT_ITEM_ID=$(gh api graphql -f query="mutation(\$projectId:ID!, \$contentId:ID!) { addProjectV2ItemById(input:{ projectId:\$projectId, contentId:\$contentId }) { item { id } } }" -f projectId="$PROJECT_ID" -f contentId="$ISSUE_NODE_ID" | jq -r '.data.addProjectV2ItemById.item.id // empty')
+          fi
+
+          if [[ -z "$PROJECT_ITEM_ID" ]]; then
+            echo "ERROR: failed to add issue to project '$PROJECT_TITLE'."
+            exit 1
+          fi
+
+          FIELD_ID=$(echo "$PROJECT_DATA" | jq -r --arg name "$TEAM_FIELD_NAME" '.data.organization.projectsV2.nodes[].fields.nodes[]? | select(.name == $name) | .id // empty' | head -n1)
+          if [[ -z "$FIELD_ID" ]]; then
+            echo "ERROR: project field '$TEAM_FIELD_NAME' not found."
+            exit 1
+          fi
+
+          OPTION_ID=$(echo "$PROJECT_DATA" | jq -r --arg field "$TEAM_FIELD_NAME" --arg option "$TEAM_VALUE" '.data.organization.projectsV2.nodes[].fields.nodes[]? | select(.name == $field) | .options[]? | select(.name == $option) | .id // empty' | head -n1)
+          if [[ -z "$OPTION_ID" ]]; then
+            echo "ERROR: option '$TEAM_VALUE' not found in field '$TEAM_FIELD_NAME'."
+            exit 1
+          fi
+
+          gh api graphql -f query="mutation(\$projectId:ID!, \$itemId:ID!, \$fieldId:ID!, \$optionId:String!) { updateProjectV2ItemFieldValue(input: { projectId:\$projectId, itemId:\$itemId, fieldId:\$fieldId, value:{ singleSelectOptionId:\$optionId } }) { projectV2Item { id } } }" -f projectId="$PROJECT_ID" -f itemId="$PROJECT_ITEM_ID" -f fieldId="$FIELD_ID" -f optionId="$OPTION_ID" >/dev/null
+
+          echo "Issue #$ISSUE_NUMBER labeled '$UNREFINED_LABEL', added to '$PROJECT_TITLE', and team set to '$TEAM_VALUE'."

@@ -53,10 +53,33 @@ validate_python_tests_schema() {
   assert_contains "$file" "default: true"
 }
 
+validate_add_to_devex_project_schema() {
+  local file="$ROOT_DIR/.github/workflows/reusable-add-to-devex-project.yml"
+
+  if [[ ! -f "$file" ]]; then
+    echo "ERROR: Missing workflow file: $file" >&2
+    exit 1
+  fi
+
+  assert_contains "$file" "on:"
+  assert_contains "$file" "workflow_call:"
+  assert_contains "$file" "team:"
+  assert_contains "$file" "required: true"
+  assert_contains "$file" "project-owner:"
+  assert_contains "$file" "default: \"ministryofjustice\""
+  assert_contains "$file" "project-title:"
+  assert_contains "$file" "default: \"Developer Experience Team\""
+  assert_contains "$file" "unrefined-label:"
+  assert_contains "$file" "default: \"Unrefined\""
+  assert_contains "$file" "app-id:"
+  assert_contains "$file" "app-private-key:"
+}
+
 main() {
   # Validate each reusable workflow schema independently for clearer failures.
   validate_add_members_schema
   validate_python_tests_schema
+  validate_add_to_devex_project_schema
 
   echo "Reusable workflow schema checks passed."
 }
