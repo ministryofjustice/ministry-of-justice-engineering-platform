@@ -8,7 +8,7 @@ on:
 
 permissions: {}
 env:
-  LICENSE_THRESHOLD: 50
+  LICENSE_THRESHOLD: 10
 
 jobs:
   monitor-github-licenses:
