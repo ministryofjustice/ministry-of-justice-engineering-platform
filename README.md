@@ -7,6 +7,7 @@ This repository provides centralized, reusable GitHub Actions workflows and auto
 ## Purpose
 
 This repository centralizes ownership of reusable GitHub workflows to:
+
 - Improve consistency across MoJ repositories
 - Reduce duplication and drift between teams
 - Enable standardization of CI/CD and automation patterns
@@ -17,10 +18,16 @@ This repository centralizes ownership of reusable GitHub workflows to:
 This repository provides several categories of workflows:
 
 ### Member Management
+
 - **Add Members to Root Team (MoJ)** - Automated workflow that ensures GitHub organization members are added to root team for `ministryofjustice` organization
 - **Add Members to Root Team (MoJAS)** - Automated workflow that ensures GitHub organization members are added to root team for `moj-analytical-services` organization
 
+### Monitoring & Alerts
+
+- **Monitor GitHub License Availability** - Monitors GitHub Enterprise license consumption and sends Slack alerts when remaining licenses are low
+
 ### CI/CD
+
 - **Dependency Review** - Security scanning for dependency vulnerabilities in pull requests
 - **Lint** - Validates GitHub Actions workflows, Markdown, and YAML files on pull requests
 - **CodeQL** - Performs static application security testing on pull requests, main branch pushes, and a weekly schedule
@@ -94,5 +101,6 @@ This repository follows the [Ministry of Justice GitHub Repository Standards](ht
 ## Support
 
 For questions or issues:
+
 - Open an issue in this repository
 - Contact the DevX Engineering Platform team
