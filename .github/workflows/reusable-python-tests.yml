@@ -56,4 +56,4 @@ jobs:
 
       - name: Upload Coverage to Codecov
         if: inputs['run-coverage']
-        uses: codecov/codecov-action@ef609d6cb5624f374eed2390087f7ac0fc5f688a # v4.6.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v4.6.0
