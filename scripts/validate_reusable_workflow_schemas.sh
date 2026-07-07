@@ -63,6 +63,8 @@ validate_add_issue_to_project_schema() {
 
   assert_contains "$file" "on:"
   assert_contains "$file" "workflow_call:"
+  assert_contains "$file" "issue-number:"
+  assert_contains "$file" "default: \"\""
   assert_contains "$file" "project-title:"
   assert_contains "$file" "required: true"
   assert_contains "$file" "project-owner:"

@@ -1,0 +1,54 @@
+---
+name: 🧪 Test Add Issue to Project
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reusable-issue-labeller
+
+permissions: {}
+
+jobs:
+  create-test-issue:
+    name: Create Test Issue
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    outputs:
+      issue-number: ${{ steps.create-issue.outputs.issue-number }}
+    steps:
+      - name: Create temporary issue
+        id: create-issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          title="[Workflow test] Add issue to project $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          body="Temporary issue created by the test workflow for reusable-add-issue-to-project.yml"
+
+          issue_json=$(gh api --method POST "repos/$REPO/issues" -f title="$title" -f body="$body")
+          issue_number=$(echo "$issue_json" | jq -r '.number')
+          issue_url=$(echo "$issue_json" | jq -r '.html_url')
+
+          echo "issue-number=$issue_number" >> "$GITHUB_OUTPUT"
+          echo "Created test issue #$issue_number: $issue_url"
+
+  call-reusable-workflow:
+    name: Call Reusable Workflow
+    needs: create-test-issue
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-add-issue-to-project.yml
+    with:
+      issue-number: ${{ needs.create-test-issue.outputs.issue-number }}
+      project-title: "👩‍💻 Developer Experience Team"
+      issue-label: "Unrefined"
+      project-fields-json: >-
+        {"Status":"👇 To do","👏 Team":"🔧 Engineering Platform","🤩 Refined?":"👎 Unrefined"}
+    secrets:
+      app-id: ${{ secrets.APP_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

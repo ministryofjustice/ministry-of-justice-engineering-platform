@@ -1,0 +1,23 @@
+---
+name: 🗂 Add New Issues to Project
+
+on:
+  issues:
+    types:
+      - opened
+
+permissions: {}
+
+jobs:
+  call-reusable-workflow:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-add-issue-to-project.yml
+    with:
+      project-title: "👩‍💻 Developer Experience Team"
+      issue-label: "Unrefined"
+      project-fields-json: >-
+        {"Status":"👇 To do","👏 Team":"🔧 Engineering Platform","🤩 Refined?":"👎 Unrefined"}
+    secrets:
+      app-id: ${{ secrets.APP_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

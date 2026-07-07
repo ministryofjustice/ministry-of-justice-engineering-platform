@@ -4,6 +4,11 @@ name: Reusable - Add New Issue to Project
 on:
   workflow_call:
     inputs:
+      issue-number:
+        description: "Issue number to process; defaults to the triggering issues event"
+        required: false
+        type: string
+        default: ""
       project-owner:
         description: "GitHub organization/user that owns the project; defaults to the issue repository owner"
         required: false
@@ -37,7 +42,7 @@ jobs:
   add-issue-to-project:
     name: Add Issue to Project
     runs-on: ubuntu-latest
-    if: github.event.issue.user.type != 'Bot' && !endsWith(github.event.issue.user.login, '[bot]')
+    if: github.event_name != 'issues' || (github.event.issue.user.type != 'Bot' && !endsWith(github.event.issue.user.login, '[bot]'))
     permissions:
       contents: read
     steps:
@@ -85,7 +90,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ inputs['issue-number'] != '' && inputs['issue-number'] || github.event.issue.number }}
           REPO_OWNER: ${{ github.repository_owner }}
           PROJECT_OWNER: ${{ inputs['project-owner'] }}
           PROJECT_TITLE: ${{ inputs['project-title'] }}
