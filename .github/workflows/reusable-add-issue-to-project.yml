@@ -18,11 +18,6 @@ on:
         description: "GitHub Project V2 title"
         required: true
         type: string
-      issue-label:
-        description: "Optional issue label to add"
-        required: false
-        type: string
-        default: ""
       project-fields-json:
         description: "Optional JSON object/array of single-select field updates (e.g. {'Status':'To do'} or [{\"name\":\"Status\",\"value\":\"To do\"}])"
         required: false
@@ -94,6 +89,5 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           PROJECT_OWNER: ${{ inputs['project-owner'] }}
           PROJECT_TITLE: ${{ inputs['project-title'] }}
-          ISSUE_LABEL: ${{ inputs['issue-label'] }}
           PROJECT_FIELDS_JSON_RAW: ${{ inputs['project-fields-json'] }}
         run: bash scripts/add_issue_to_project.sh

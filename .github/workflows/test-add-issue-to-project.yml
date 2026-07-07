@@ -46,7 +46,6 @@ jobs:
     with:
       issue-number: ${{ needs.create-test-issue.outputs.issue-number }}
       project-title: "👩‍💻 Developer Experience Team"
-      issue-label: "Unrefined"
       project-fields-json: >-
         {"Status":"👇 To do","👏 Team":"🔧 Engineering Platform","🤩 Refined?":"👎 Unrefined"}
     secrets:

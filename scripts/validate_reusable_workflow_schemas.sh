@@ -69,7 +69,6 @@ validate_add_issue_to_project_schema() {
   assert_contains "$file" "required: true"
   assert_contains "$file" "project-owner:"
   assert_contains "$file" "default: \"\""
-  assert_contains "$file" "issue-label:"
   assert_contains "$file" "project-fields-json:"
   assert_contains "$file" "default: \"[]\""
   assert_contains "$file" "app-id:"

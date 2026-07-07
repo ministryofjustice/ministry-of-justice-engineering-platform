@@ -95,7 +95,6 @@ jobs:
     with:
       project-owner: "ministryofjustice"
       project-title: "Developer Experience Team"
-      issue-label: "Unrefined"
       project-fields-json: >-
         {"👏 Team":"🔧 Engineering Platform","Status":"👇 To do"}
     secrets:

@@ -50,10 +50,6 @@ edit_args=(
   --add-project "$PROJECT_TITLE"
 )
 
-if [[ -n "$ISSUE_LABEL" ]]; then
-  edit_args+=(--add-label "$ISSUE_LABEL")
-fi
-
 gh "${edit_args[@]}" >/dev/null
 
 PROJECT_NUMBER=$(gh project list --owner "$PROJECT_OWNER" --format json \
