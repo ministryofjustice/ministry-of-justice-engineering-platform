@@ -21,7 +21,10 @@ This repository provides several categories of workflows:
 
 - **Add Members to Root Team (MoJ)** - Automated workflow that ensures GitHub organization members are added to root team for `ministryofjustice` organization
 - **Add Members to Root Team (MoJAS)** - Automated workflow that ensures GitHub organization members are added to root team for `moj-analytical-services` organization
-- **Add New Issues to DevX Project** (Reusable) - Adds newly opened non-bot issues to the DevX GitHub project, applies the `Unrefined` label, and sets the caller-supplied team field
+
+### Project Management
+
+- **Add New Issues to Project** (Reusable) - Adds newly opened non-bot issues to a caller-configured GitHub project, with optional issue label and project field updates
 
 ### Monitoring & Alerts
 
@@ -74,10 +77,10 @@ jobs:
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 ```
 
-To route newly opened issues from a repository into the DevX project, use the reusable workflow from an `issues.opened` caller workflow. Bot-opened issues are skipped.
+To route newly opened issues from a repository into a GitHub project, use the reusable workflow from an `issues.opened` caller workflow. Bot-opened issues are skipped.
 
 ```yaml
-name: Add New Issues to DevX Project
+name: Add New Issues to Project
 
 on:
   issues:
@@ -87,14 +90,23 @@ on:
 permissions: {}
 
 jobs:
-  add-to-devex-project:
-    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-to-devex-project.yml@main
+  add-issue-to-project:
+    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-issue-to-project.yml@main
     with:
-      team: "🔧 Engineering Platform"
+      project-owner: "ministryofjustice"
+      project-title: "Developer Experience Team"
+      issue-label: "Unrefined"
+      project-fields-json: >-
+        {"👏 Team":"🔧 Engineering Platform","Status":"👇 To do"}
     secrets:
       app-id: ${{ secrets.APP_ID }}
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 ```
+
+`project-fields-json` accepts either:
+
+- A JSON object map of field name to option value
+- A JSON array of objects with `name` and `value`
 
 ## Included Files
 
