@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for better relevancy of analysis
 
       - name: Setup Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ inputs['python-version'] }}
           cache: "pipenv"
@@ -56,4 +56,4 @@ jobs:
 
       - name: Upload Coverage to Codecov
         if: inputs['run-coverage']
-        uses: codecov/codecov-action@ef609d6cb5624f374eed2390087f7ac0fc5f688a # v4.6.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v4.6.0
