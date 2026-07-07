@@ -54,7 +54,11 @@ if [[ -z "$PROJECT_NUMBER" ]]; then
 fi
 
 ISSUE_URL="https://github.com/$REPO/issues/$ISSUE_NUMBER"
-if ! add_item_output=$(gh project item-add "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$ISSUE_URL" 2>&1); then
+PROJECT_ITEM_ID=""
+
+if add_item_output=$(gh project item-add "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$ISSUE_URL" --format json 2>&1); then
+  PROJECT_ITEM_ID=$(echo "$add_item_output" | jq -r '.id // .item.id // .data.item.id // empty')
+else
   # The issue may already be in the project; item lookup below is the source of truth.
   echo "WARNING: unable to add issue to project via gh project item-add: $add_item_output"
 fi
@@ -67,15 +71,17 @@ if [[ -z "$PROJECT_ID" ]]; then
   exit 1
 fi
 
-PROJECT_ITEM_ID=$(gh project item-list "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --limit 200 --format json \
-  | jq -r --arg repo "$REPO" --argjson issue_number "$ISSUE_NUMBER" '
-      .. | objects
-      | select((.content? | type) == "object")
-      | select(.content.number? == $issue_number)
-      | select((.content.repository? | type) != "object" or ((.content.repository.owner.login + "/" + .content.repository.name) == $repo))
-      | .id // empty
-    ' \
-  | head -n1)
+if [[ -z "$PROJECT_ITEM_ID" ]]; then
+  PROJECT_ITEM_ID=$(gh project item-list "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --limit 1000 --format json \
+    | jq -r --arg repo "$REPO" --argjson issue_number "$ISSUE_NUMBER" '
+        .. | objects
+        | select((.content? | type) == "object")
+        | select(.content.number? == $issue_number)
+        | select((.content.repository? | type) != "object" or ((.content.repository.owner.login + "/" + .content.repository.name) == $repo))
+        | .id // empty
+      ' \
+    | head -n1)
+fi
 
 if [[ -z "$PROJECT_ITEM_ID" ]]; then
   echo "ERROR: failed to find issue #$ISSUE_NUMBER in project '$PROJECT_TITLE'."
