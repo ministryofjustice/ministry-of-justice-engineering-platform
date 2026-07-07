@@ -1,0 +1,94 @@
+---
+name: Reusable - Add New Issue to Project
+
+on:
+  workflow_call:
+    inputs:
+      project-owner:
+        description: "GitHub organization/user that owns the project; defaults to the issue repository owner"
+        required: false
+        type: string
+        default: ""
+      project-title:
+        description: "GitHub Project V2 title"
+        required: true
+        type: string
+      issue-label:
+        description: "Optional issue label to add"
+        required: false
+        type: string
+        default: ""
+      project-fields-json:
+        description: "Optional JSON object/array of single-select field updates (e.g. {'Status':'To do'} or [{\"name\":\"Status\",\"value\":\"To do\"}])"
+        required: false
+        type: string
+        default: "[]"
+    secrets:
+      app-id:
+        description: "GitHub App ID"
+        required: true
+      app-private-key:
+        description: "GitHub App private key"
+        required: true
+
+permissions: {}
+
+jobs:
+  add-issue-to-project:
+    name: Add Issue to Project
+    runs-on: ubuntu-latest
+    if: github.event.issue.user.type != 'Bot' && !endsWith(github.event.issue.user.login, '[bot]')
+    permissions:
+      contents: read
+    steps:
+      - name: Parse repository
+        id: repo
+        env:
+          TARGET_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo "owner=${TARGET_REPO%%/*}" >> "$GITHUB_OUTPUT"
+          echo "name=${TARGET_REPO##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        with:
+          app-id: ${{ secrets['app-id'] }}
+          private-key: ${{ secrets['app-private-key'] }}
+          owner: ${{ steps.repo.outputs.owner }}
+          repositories: ${{ steps.repo.outputs.name }}
+
+      - name: Resolve Workflow Source
+        id: workflow-source
+        run: |
+          WORKFLOW_REF="${{ github.workflow_ref }}"
+          SOURCE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
+          SOURCE_REF="${WORKFLOW_REF##*@}"
+          echo "repo=${SOURCE_REPO}" >> "$GITHUB_OUTPUT"
+          echo "ref=${SOURCE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Workflow Repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ steps.workflow-source.outputs.repo }}
+          ref: ${{ steps.workflow-source.outputs.ref }}
+          path: workflow-source
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Add issue to project and apply optional metadata
+        working-directory: workflow-source
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          PROJECT_OWNER: ${{ inputs['project-owner'] }}
+          PROJECT_TITLE: ${{ inputs['project-title'] }}
+          ISSUE_LABEL: ${{ inputs['issue-label'] }}
+          PROJECT_FIELDS_JSON_RAW: ${{ inputs['project-fields-json'] }}
+        run: bash scripts/add_issue_to_project.sh
