@@ -44,14 +44,6 @@ NORMALIZED_FIELD_UPDATES=$(echo "$PROJECT_FIELDS_JSON" | jq -c '
   end
 ')
 
-edit_args=(
-  issue edit "$ISSUE_NUMBER"
-  --repo "$REPO"
-  --add-project "$PROJECT_TITLE"
-)
-
-gh "${edit_args[@]}" >/dev/null
-
 PROJECT_NUMBER=$(gh project list --owner "$PROJECT_OWNER" --format json \
   | jq -r --arg title "$PROJECT_TITLE" '.. | objects | select(.title? == $title and .number?) | .number' \
   | head -n1)
@@ -59,6 +51,12 @@ PROJECT_NUMBER=$(gh project list --owner "$PROJECT_OWNER" --format json \
 if [[ -z "$PROJECT_NUMBER" ]]; then
   echo "ERROR: project '$PROJECT_TITLE' not found under '$PROJECT_OWNER'."
   exit 1
+fi
+
+ISSUE_URL="https://github.com/$REPO/issues/$ISSUE_NUMBER"
+if ! add_item_output=$(gh project item-add "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$ISSUE_URL" 2>&1); then
+  # The issue may already be in the project; item lookup below is the source of truth.
+  echo "WARNING: unable to add issue to project via gh project item-add: $add_item_output"
 fi
 
 PROJECT_DATA=$(gh project view "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json)
