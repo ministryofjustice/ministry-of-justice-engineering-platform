@@ -94,6 +94,5 @@ jobs:
     with:
       repo: ${{ matrix.repo }}
     secrets:
-      APP_ID: ${{ secrets.REPO_ISSUE_APP_ID }}
       APP_CLIENT_ID: ${{ secrets.REPO_ISSUE_APP_CLIENT_ID }}
       APP_PRIVATE_KEY: ${{ secrets.REPO_ISSUE_APP_PRIVATE_KEY }}
