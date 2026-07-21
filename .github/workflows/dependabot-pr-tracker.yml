@@ -45,7 +45,7 @@ jobs:
           repositories: ${{ steps.target.outputs.name }}
           permission-issues: write
           permission-organization-projects: write
-          permission-pull-requests: read
+          permission-pull-requests: write
 
       - name: Install prerequisites
         run: |
