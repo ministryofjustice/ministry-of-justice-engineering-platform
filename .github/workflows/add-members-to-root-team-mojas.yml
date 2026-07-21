@@ -3,7 +3,7 @@ name: 🤖 Add GitHub Members to Root Team (MoJAS)
 
 on:
   pull_request:
-      branches: [main]
+    branches: [main]
   workflow_dispatch:
   schedule:
     - cron: "0 8,10,12,14,16 * * 1-5"
