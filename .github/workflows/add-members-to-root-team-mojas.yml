@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/reusable-add-members-to-root-team.yml
+      - .github/workflows/add-members-to-root-team-mojas.yml
   workflow_dispatch:
   schedule:
     - cron: "0 8,10,12,14,16 * * 1-5"
