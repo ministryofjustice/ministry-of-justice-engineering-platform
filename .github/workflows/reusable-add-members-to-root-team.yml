@@ -14,11 +14,11 @@ on:
         type: string
         default: "3.11"
     secrets:
-      app-id:
-        description: "GitHub App ID"
+      app-client-id:
+        description: "GitHub App Client ID for user sync app"
         required: true
       app-private-key:
-        description: "GitHub App private key"
+        description: "GitHub App private key for user sync app"
         required: true
       slack-webhook-url:
         description: "Slack webhook URL for notifications"
@@ -59,7 +59,7 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets['app-id'] }}
+          client-id: ${{ secrets['app-client-id'] }}
           private-key: ${{ secrets['app-private-key'] }}
           owner: ${{ inputs['organization-name'] }}
 

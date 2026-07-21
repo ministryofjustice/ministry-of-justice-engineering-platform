@@ -9,10 +9,10 @@ on:
         type: string
     secrets:
       APP_CLIENT_ID:
-        description: "GitHub App Client ID"
+        description: "GitHub App Client ID for Dependabot PR Tracker"
         required: true
       APP_PRIVATE_KEY:
-        description: "GitHub App private key"
+        description: "GitHub App private key for Dependabot PR Tracker"
         required: true
 
 jobs:
