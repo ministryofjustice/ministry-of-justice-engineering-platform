@@ -30,7 +30,7 @@ validate_add_members_schema() {
   assert_contains "$file" "required: true"
   assert_contains "$file" "python-version:"
   assert_contains "$file" "default: \"3.11\""
-  assert_contains "$file" "app-id:"
+  assert_contains "$file" "app-client-id:"
   assert_contains "$file" "app-private-key:"
   assert_contains "$file" "required: true"
 }
