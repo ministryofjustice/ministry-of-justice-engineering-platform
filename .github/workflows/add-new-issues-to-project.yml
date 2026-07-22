@@ -18,6 +18,6 @@ jobs:
       project-fields-json: >-
         {"Status":"👇 To do","👏 Team":"🔧 Engineering Platform","🤩 Refined?":"👎 Unrefined"}
     secrets:
-      app-id: ${{ secrets.APP_ID }}
+      app-client-id: ${{ secrets.APP_CLIENT_ID }}
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

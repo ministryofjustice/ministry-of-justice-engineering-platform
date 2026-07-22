@@ -71,7 +71,7 @@ validate_add_issue_to_project_schema() {
   assert_contains "$file" "default: \"\""
   assert_contains "$file" "project-fields-json:"
   assert_contains "$file" "default: \"[]\""
-  assert_contains "$file" "app-id:"
+  assert_contains "$file" "app-client-id:"
   assert_contains "$file" "app-private-key:"
   assert_contains "$file" "slack-webhook-url:"
 }
