@@ -68,7 +68,7 @@ jobs:
       organization-name: "ministryofjustice"
       python-version: "3.11"
     secrets:
-      app-id: ${{ secrets.APP_ID }}
+      client-id: ${{ secrets.APP_CLIENT_ID }}
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 ```

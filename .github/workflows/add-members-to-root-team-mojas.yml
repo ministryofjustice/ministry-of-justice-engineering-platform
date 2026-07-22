@@ -2,6 +2,11 @@
 name: 🤖 Add GitHub Members to Root Team (MoJAS)
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/reusable-add-members-to-root-team.yml
+      - .github/workflows/add-members-to-root-team-mojas.yml
   workflow_dispatch:
   schedule:
     - cron: "0 8,10,12,14,16 * * 1-5"
@@ -17,7 +22,7 @@ jobs:
       organization-name: "moj-analytical-services"
       python-version: "3.11"
     secrets:
-      app-id: ${{ secrets.APP_ID }}
+      app-client-id: ${{ secrets.APP_CLIENT_ID }}
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
       logging-level: ${{ secrets.LOGGING_LEVEL }}

@@ -57,7 +57,7 @@ graph LR
 ```
 
 **Token Generation**:
-1. Workflow reads `APP_ID` and `APP_PRIVATE_KEY` from secrets
+1. Workflow reads `APP_CLIENT_ID` and `APP_PRIVATE_KEY` from secrets
 2. Uses `actions/create-github-app-token` to generate a temporary token
 3. Token is valid for 1 hour
 4. Token is scoped to the specific organization
@@ -92,7 +92,7 @@ The Python script (`scripts.add_users_all_org_members_github_team`):
 
 | Secret Name | Type | Description | How to Get |
 |------------|------|-------------|------------|
-| `APP_ID` | Repository Secret | GitHub App ID | From enterprise app settings page |
+| `APP_CLIENT_ID` | Repository Secret | GitHub App Client ID | From enterprise app settings page |
 | `APP_PRIVATE_KEY` | Repository Secret | Private key in PEM format | Generated for the same enterprise app |
 
 The same app credentials are used for both workflows, but the app must be installed in both `ministryofjustice` and `moj-analytical-services` organizations.
@@ -184,10 +184,10 @@ The GitHub App must have these permissions:
 Error: Bad credentials
 ```
 
-**Cause**: APP_ID or APP_PRIVATE_KEY is incorrect
+**Cause**: APP_CLIENT_ID or APP_PRIVATE_KEY is incorrect
 
 **Solution**:
-1. Verify APP_ID matches the app settings page
+1. Verify APP_CLIENT_ID matches the app settings page
 2. Regenerate private key and update secret
 3. Ensure entire PEM file was copied (including BEGIN/END lines)
 
@@ -277,10 +277,10 @@ Error: The job running on runner has exceeded the maximum execution time of X mi
    # In workflow file, add debug step:
    - name: Debug
      run: |
-       echo "APP_ID length: ${#APP_ID}"
+       echo "APP_CLIENT_ID length: ${#APP_CLIENT_ID}"
        echo "Key length: ${#APP_PRIVATE_KEY}"
      env:
-       APP_ID: ${{ secrets.APP_ID }}
+       APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
        APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
    ```
 

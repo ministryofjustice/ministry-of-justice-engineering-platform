@@ -8,11 +8,11 @@ on:
         required: true
         type: string
     secrets:
-      APP_ID:
-        description: "GitHub App ID"
+      APP_CLIENT_ID:
+        description: "GitHub App Client ID for Dependabot PR Tracker"
         required: true
       APP_PRIVATE_KEY:
-        description: "GitHub App private key"
+        description: "GitHub App private key for Dependabot PR Tracker"
         required: true
 
 jobs:
@@ -39,13 +39,13 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ steps.target.outputs.owner }}
           repositories: ${{ steps.target.outputs.name }}
           permission-issues: write
           permission-organization-projects: write
-          permission-pull-requests: read
+          permission-pull-requests: write
 
       - name: Install prerequisites
         run: |
