@@ -94,12 +94,13 @@ jobs:
     uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-issue-to-project.yml@main
     with:
       project-owner: "ministryofjustice"
-      project-title: "Developer Experience Team"
+      project-title: "👩‍💻 Developer Experience Team"
       project-fields-json: >-
-        {"👏 Team":"🔧 Engineering Platform","Status":"👇 To do"}
+        {"Status":"👇 To do","👏 Team":"🔧 Engineering Platform","🤩 Refined?":"👎 Unrefined"}
     secrets:
-      app-id: ${{ secrets.APP_ID }}
+      app-client-id: ${{ secrets.APP_CLIENT_ID }}
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 ```
 
 `project-fields-json` accepts either:
