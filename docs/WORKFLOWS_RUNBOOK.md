@@ -9,6 +9,9 @@ This runbook provides operational guidance for the Engineering Platform workflow
 - **`add-members-to-root-team-mojas.yml`** - Adds members to root team for moj-analytical-services org
 - **`reusable-add-members-to-root-team.yml`** - Reusable workflow for member management
 
+### Project Management Workflows
+- **`reusable-add-issue-to-project.yml`** - Reusable workflow that adds new non-bot issues to a caller-configured project and optionally applies issue labels and project field updates
+
 ### CI/CD Workflows
 - **`dependency-review.yml`** - Reviews dependency changes for security vulnerabilities
 - **`lint.yml`** - Validates GitHub Actions workflows, Markdown, and YAML files

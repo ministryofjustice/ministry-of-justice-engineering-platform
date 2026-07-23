@@ -22,6 +22,10 @@ This repository provides several categories of workflows:
 - **Add Members to Root Team (MoJ)** - Automated workflow that ensures GitHub organization members are added to root team for `ministryofjustice` organization
 - **Add Members to Root Team (MoJAS)** - Automated workflow that ensures GitHub organization members are added to root team for `moj-analytical-services` organization
 
+### Project Management
+
+- **Add New Issues to Project** (Reusable) - Adds newly opened non-bot issues to a caller-configured GitHub project, with optional issue label and project field updates
+
 ### Monitoring & Alerts
 
 - **Monitor GitHub License Availability** - Monitors GitHub Enterprise license consumption and sends Slack alerts when remaining licenses are low
@@ -72,6 +76,37 @@ jobs:
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 ```
+
+To route newly opened issues from a repository into a GitHub project, use the reusable workflow from an `issues.opened` caller workflow. Bot-opened issues are skipped.
+
+```yaml
+name: Add New Issues to Project
+
+on:
+  issues:
+    types:
+      - opened
+
+permissions: {}
+
+jobs:
+  add-issue-to-project:
+    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-issue-to-project.yml@main
+    with:
+      project-owner: "ministryofjustice"
+      project-title: "👩‍💻 Developer Experience Team"
+      project-fields-json: >-
+        {"Status":"👇 To do","👏 Team":"🔧 Engineering Platform","🤩 Refined?":"👎 Unrefined"}
+    secrets:
+      app-client-id: ${{ secrets.APP_CLIENT_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+`project-fields-json` accepts either:
+
+- A JSON object map of field name to option value
+- A JSON array of objects with `name` and `value`
 
 ## Included Files
 
