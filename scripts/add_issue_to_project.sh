@@ -50,12 +50,39 @@ NORMALIZED_FIELD_UPDATES=$(echo "$PROJECT_FIELDS_JSON" | jq -c '
   end
 ')
 
-PROJECT_NUMBER=$(gh project list --owner "$PROJECT_OWNER" --format json \
-  | jq -r --arg title "$PROJECT_TITLE" '.. | objects | select(.title? == $title and .number?) | .number' \
-  | head -n1)
+# Resolve project by number first when a numeric value is supplied; otherwise resolve by title.
+if [[ "$PROJECT_TITLE" =~ ^[0-9]+$ ]]; then
+  PROJECT_NUMBER="$PROJECT_TITLE"
+else
+  PROJECTS_JSON=$(gh project list --owner "$PROJECT_OWNER" --limit 1000 --format json)
+
+  PROJECT_NUMBER=$(echo "$PROJECTS_JSON" | jq -r --arg title "$PROJECT_TITLE" '
+    [
+      .. | objects
+      | select(.title? and .number?)
+      | select(.title == $title)
+      | .number
+    ][0] // empty
+  ')
+
+  if [[ -z "$PROJECT_NUMBER" ]]; then
+    # Fallback to whitespace-normalized matching to tolerate accidental spacing drift.
+    PROJECT_NUMBER=$(echo "$PROJECTS_JSON" | jq -r --arg title "$PROJECT_TITLE" '
+      def norm: gsub("[[:space:]]+"; " ") | gsub("^ "; "") | gsub(" $"; "");
+      [
+        .. | objects
+        | select(.title? and .number?)
+        | select((.title | norm) == ($title | norm))
+        | .number
+      ][0] // empty
+    ')
+  fi
+fi
 
 if [[ -z "$PROJECT_NUMBER" ]]; then
   echo "ERROR: project '$PROJECT_TITLE' not found under '$PROJECT_OWNER'."
+  echo "INFO: Ensure the GitHub App token can read organization projects and that the title is exact."
+  echo "INFO: You can also pass a numeric project number as project-title to skip title lookup."
   exit 1
 fi
 
