@@ -1,0 +1,49 @@
+---
+name: 🧪 Test Add Issue to Project (Manual)
+
+on:
+  push:
+    branches:
+      - 'fix/debug-script-location'
+    paths:
+      - '.github/workflows/test-add-issue-to-project.yml'
+      - '.github/workflows/reusable-add-issue-to-project.yml'
+  workflow_dispatch:
+    inputs:
+      issue-number:
+        description: "Issue number to add to the project"
+        required: true
+        type: string
+      project-title:
+        description: "GitHub Project V2 title"
+        required: false
+        type: string
+        default: "👩‍💻 Developer Experience Team"
+      project-fields-json:
+        description: "Optional JSON object/array of single-select field updates"
+        required: false
+        type: string
+        default: '{"Status":"👇 To do","👏 Team":"👾 Engineering Portal","🤩 Refined?":"👎 Unrefined"}'
+      test-branch:
+        description: "Branch to test (leave empty to use current branch)"
+        required: false
+        type: string
+        default: ""
+
+permissions: {}
+
+jobs:
+  call-reusable-workflow:
+    # Only run if manually triggered (push trigger is just to make workflow_dispatch available)
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-issue-to-project.yml@${{ inputs.test-branch || github.ref_name }}
+    with:
+      issue-number: ${{ inputs.issue-number }}
+      project-title: ${{ inputs.project-title }}
+      project-fields-json: ${{ inputs.project-fields-json }}
+    secrets:
+      app-client-id: ${{ secrets.ISSUE_ORCHESTRATOR_GH_APP_CLIENT_ID }}
+      app-private-key: ${{ secrets.ISSUE_ORCHESTRATOR_GH_APP_PRIVATE_KEY }}
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

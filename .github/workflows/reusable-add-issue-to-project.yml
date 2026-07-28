@@ -120,39 +120,39 @@ jobs:
           PROJECT_FIELDS_JSON_RAW: ${{ inputs['project-fields-json'] }}
         run: bash "${{ github.workspace }}/workflow-source/scripts/add_issue_to_project.sh"
 
-      - name: Slack failure notification
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-        with:
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":no_entry: Failed GitHub Action:"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Job:*\n${{ github.job }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Repo:*\n${{ github.repository }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets['slack-webhook-url'] }}
-        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
+      # - name: Slack failure notification
+      #   uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+      #   with:
+      #     webhook-type: incoming-webhook
+      #     payload: |
+      #       {
+      #         "blocks": [
+      #           {
+      #             "type": "section",
+      #             "text": {
+      #               "type": "mrkdwn",
+      #               "text": ":no_entry: Failed GitHub Action:"
+      #             }
+      #           },
+      #           {
+      #             "type": "section",
+      #             "fields": [
+      #               {
+      #                 "type": "mrkdwn",
+      #                 "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
+      #               },
+      #               {
+      #                 "type": "mrkdwn",
+      #                 "text": "*Job:*\n${{ github.job }}"
+      #               },
+      #               {
+      #                 "type": "mrkdwn",
+      #                 "text": "*Repo:*\n${{ github.repository }}"
+      #               }
+      #             ]
+      #           }
+      #         ]
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets['slack-webhook-url'] }}
+      #   if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
