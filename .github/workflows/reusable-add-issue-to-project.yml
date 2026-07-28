@@ -65,9 +65,21 @@ jobs:
       - name: Resolve Workflow Source
         id: workflow-source
         run: |
+          set -euo pipefail
           WORKFLOW_REF="${{ github.workflow_ref }}"
+          echo "DEBUG: Full workflow_ref: ${WORKFLOW_REF}"
+          
           SOURCE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
+          echo "DEBUG: Extracted repository: ${SOURCE_REPO}"
+          
           SOURCE_REF="${WORKFLOW_REF##*@}"
+          echo "DEBUG: Extracted ref: ${SOURCE_REF}"
+          
+          if [[ -z "${SOURCE_REPO}" ]] || [[ -z "${SOURCE_REF}" ]]; then
+            echo "ERROR: Failed to parse workflow_ref"
+            exit 1
+          fi
+          
           echo "repo=${SOURCE_REPO}" >> "$GITHUB_OUTPUT"
           echo "ref=${SOURCE_REF}" >> "$GITHUB_OUTPUT"
 
@@ -77,6 +89,20 @@ jobs:
           repository: ${{ steps.workflow-source.outputs.repo }}
           ref: ${{ steps.workflow-source.outputs.ref }}
           path: workflow-source
+
+      - name: Verify Checkout
+        run: |
+          echo "DEBUG: Workspace contents:"
+          ls -la "${{ github.workspace }}"
+          echo ""
+          echo "DEBUG: workflow-source exists?"
+          ls -la "${{ github.workspace }}/workflow-source" || echo "workflow-source directory NOT FOUND"
+          echo ""
+          echo "DEBUG: workflow-source/scripts exists?"
+          ls -la "${{ github.workspace }}/workflow-source/scripts" || echo "scripts directory NOT FOUND"
+          echo ""
+          echo "DEBUG: Looking for the script:"
+          ls -la "${{ github.workspace }}/workflow-source/scripts/add_issue_to_project.sh" || echo "SCRIPT NOT FOUND"
 
       - name: Install prerequisites
         run: |
