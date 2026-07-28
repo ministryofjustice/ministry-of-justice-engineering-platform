@@ -2,6 +2,11 @@
 name: Reusable - Add New Issue to Project
 
 on:
+  push:
+    branches:
+      - 'fix/debug-script-location'
+    paths:
+      - '.github/workflows/reusable-add-issue-to-project.yml'
   workflow_dispatch:
   workflow_call:
     inputs:
