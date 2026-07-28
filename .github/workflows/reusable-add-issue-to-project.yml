@@ -84,7 +84,6 @@ jobs:
           sudo apt-get install -y jq
 
       - name: Add issue to project and apply optional metadata
-        working-directory: workflow-source
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
@@ -93,7 +92,7 @@ jobs:
           PROJECT_OWNER: ${{ inputs['project-owner'] }}
           PROJECT_TITLE: ${{ inputs['project-title'] }}
           PROJECT_FIELDS_JSON_RAW: ${{ inputs['project-fields-json'] }}
-        run: bash scripts/add_issue_to_project.sh
+        run: bash "${{ github.workspace }}/workflow-source/scripts/add_issue_to_project.sh"
 
       - name: Slack failure notification
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
