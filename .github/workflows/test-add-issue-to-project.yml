@@ -38,7 +38,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
-    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-issue-to-project.yml@${{ github.event_name == 'workflow_dispatch' && (inputs.test-branch || github.ref_name) || github.ref_name }}
+    uses: ministryofjustice/ministry-of-justice-engineering-platform/.github/workflows/reusable-add-issue-to-project.yml@${{ inputs.test-branch != '' && inputs.test-branch || github.ref_name }}
     with:
       issue-number: ${{ inputs.issue-number }}
       project-title: ${{ inputs.project-title }}
