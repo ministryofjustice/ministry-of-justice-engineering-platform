@@ -2,12 +2,6 @@
 name: Reusable - Add New Issue to Project
 
 on:
-  push:
-    branches:
-      - 'fix/debug-script-location'
-    paths:
-      - '.github/workflows/reusable-add-issue-to-project.yml'
-  workflow_dispatch:
   workflow_call:
     inputs:
       issue-number:
@@ -29,6 +23,11 @@ on:
         required: false
         type: string
         default: "[]"
+      workflow-scripts-ref:
+        description: "Git ref (branch/tag) to checkout for scripts (defaults to main)"
+        required: false
+        type: string
+        default: "main"
     secrets:
       app-client-id:
         description: "GitHub App Client ID"
@@ -68,21 +67,11 @@ jobs:
           owner: ${{ steps.repo.outputs.owner }}
           repositories: ${{ steps.repo.outputs.name }}
 
-      - name: Debug GitHub Context
-        run: |
-          echo "github.workflow_ref: ${{ github.workflow_ref }}"
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.action_ref: ${{ github.action_ref }}"
-          echo "github.action_repository: ${{ github.action_repository }}"
-          echo "github.sha: ${{ github.sha }}"
-          echo "Full context:"
-          echo '${{ toJSON(github) }}'
-
       - name: Checkout Workflow Repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: ministryofjustice/ministry-of-justice-engineering-platform
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs['workflow-scripts-ref'] }}
           path: workflow-source
 
       - name: Verify Checkout
