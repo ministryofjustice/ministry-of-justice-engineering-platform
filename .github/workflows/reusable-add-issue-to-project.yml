@@ -68,32 +68,11 @@ jobs:
           owner: ${{ steps.repo.outputs.owner }}
           repositories: ${{ steps.repo.outputs.name }}
 
-      - name: Resolve Workflow Source
-        id: workflow-source
-        run: |
-          set -euo pipefail
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          echo "DEBUG: Full workflow_ref: ${WORKFLOW_REF}"
-          
-          SOURCE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
-          echo "DEBUG: Extracted repository: ${SOURCE_REPO}"
-          
-          SOURCE_REF="${WORKFLOW_REF##*@}"
-          echo "DEBUG: Extracted ref: ${SOURCE_REF}"
-          
-          if [[ -z "${SOURCE_REPO}" ]] || [[ -z "${SOURCE_REF}" ]]; then
-            echo "ERROR: Failed to parse workflow_ref"
-            exit 1
-          fi
-          
-          echo "repo=${SOURCE_REPO}" >> "$GITHUB_OUTPUT"
-          echo "ref=${SOURCE_REF}" >> "$GITHUB_OUTPUT"
-
       - name: Checkout Workflow Repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          repository: ${{ steps.workflow-source.outputs.repo }}
-          ref: ${{ steps.workflow-source.outputs.ref }}
+          repository: ministryofjustice/ministry-of-justice-engineering-platform
+          ref: ${{ github.ref }}
           path: workflow-source
 
       - name: Verify Checkout
