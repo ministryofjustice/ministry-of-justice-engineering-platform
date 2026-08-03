@@ -68,6 +68,16 @@ jobs:
           owner: ${{ steps.repo.outputs.owner }}
           repositories: ${{ steps.repo.outputs.name }}
 
+      - name: Debug GitHub Context
+        run: |
+          echo "github.workflow_ref: ${{ github.workflow_ref }}"
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.action_ref: ${{ github.action_ref }}"
+          echo "github.action_repository: ${{ github.action_repository }}"
+          echo "github.sha: ${{ github.sha }}"
+          echo "Full context:"
+          echo '${{ toJSON(github) }}'
+
       - name: Checkout Workflow Repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
