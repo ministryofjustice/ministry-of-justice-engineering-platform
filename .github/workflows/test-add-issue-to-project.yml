@@ -4,7 +4,8 @@ name: 🧪 Test Add Issue to Project (Manual)
 on:
   push:
     branches:
-      - 'fix/debug-script-location'
+      - main
+      - 'fix/**'
     paths:
       - '.github/workflows/test-add-issue-to-project.yml'
       - '.github/workflows/reusable-add-issue-to-project.yml'
