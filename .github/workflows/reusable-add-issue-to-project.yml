@@ -93,6 +93,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
+      - name: Debug inputs
+        run: |
+          echo "DEBUG: inputs.issue-number = '${{ inputs.issue-number }}'"
+          echo "DEBUG: inputs['issue-number'] = '${{ inputs['issue-number'] }}'"
+          echo "DEBUG: github.event.issue.number = '${{ github.event.issue.number }}'"
+          echo "DEBUG: github.event_name = '${{ github.event_name }}'"
+
       - name: Add issue to project and apply optional metadata
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
