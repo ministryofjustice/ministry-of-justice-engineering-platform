@@ -23,11 +23,6 @@ on:
         required: false
         type: string
         default: "[]"
-      workflow-scripts-ref:
-        description: "Git ref (branch/tag) to checkout for scripts (defaults to main)"
-        required: false
-        type: string
-        default: "main"
     secrets:
       app-client-id:
         description: "GitHub App Client ID"
@@ -71,34 +66,13 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: ministryofjustice/ministry-of-justice-engineering-platform
-          ref: ${{ inputs['workflow-scripts-ref'] }}
+          ref: main
           path: workflow-source
-
-      - name: Verify Checkout
-        run: |
-          echo "DEBUG: Workspace contents:"
-          ls -la "${{ github.workspace }}"
-          echo ""
-          echo "DEBUG: workflow-source exists?"
-          ls -la "${{ github.workspace }}/workflow-source" || echo "workflow-source directory NOT FOUND"
-          echo ""
-          echo "DEBUG: workflow-source/scripts exists?"
-          ls -la "${{ github.workspace }}/workflow-source/scripts" || echo "scripts directory NOT FOUND"
-          echo ""
-          echo "DEBUG: Looking for the script:"
-          ls -la "${{ github.workspace }}/workflow-source/scripts/add_issue_to_project.sh" || echo "SCRIPT NOT FOUND"
 
       - name: Install prerequisites
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
-
-      - name: Debug inputs
-        run: |
-          echo "DEBUG: inputs.issue-number = '${{ inputs.issue-number }}'"
-          echo "DEBUG: inputs['issue-number'] = '${{ inputs['issue-number'] }}'"
-          echo "DEBUG: github.event.issue.number = '${{ github.event.issue.number }}'"
-          echo "DEBUG: github.event_name = '${{ github.event_name }}'"
 
       - name: Add issue to project and apply optional metadata
         env:
@@ -111,39 +85,39 @@ jobs:
           PROJECT_FIELDS_JSON_RAW: ${{ inputs['project-fields-json'] }}
         run: bash "${{ github.workspace }}/workflow-source/scripts/add_issue_to_project.sh"
 
-      # - name: Slack failure notification
-      #   uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-      #   with:
-      #     webhook-type: incoming-webhook
-      #     payload: |
-      #       {
-      #         "blocks": [
-      #           {
-      #             "type": "section",
-      #             "text": {
-      #               "type": "mrkdwn",
-      #               "text": ":no_entry: Failed GitHub Action:"
-      #             }
-      #           },
-      #           {
-      #             "type": "section",
-      #             "fields": [
-      #               {
-      #                 "type": "mrkdwn",
-      #                 "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
-      #               },
-      #               {
-      #                 "type": "mrkdwn",
-      #                 "text": "*Job:*\n${{ github.job }}"
-      #               },
-      #               {
-      #                 "type": "mrkdwn",
-      #                 "text": "*Repo:*\n${{ github.repository }}"
-      #               }
-      #             ]
-      #           }
-      #         ]
-      #       }
-      #   env:
-      #     SLACK_WEBHOOK_URL: ${{ secrets['slack-webhook-url'] }}
-      #   if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
+      - name: Slack failure notification
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":no_entry: Failed GitHub Action:"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job:*\n${{ github.job }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repo:*\n${{ github.repository }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets['slack-webhook-url'] }}
+        if: ${{ failure() && env.SLACK_WEBHOOK_URL != '' }}
