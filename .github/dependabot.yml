@@ -3,24 +3,29 @@
 # package ecosystems to update and where the package manifests are located.
 # Please see the documentation for all configuration options:
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# The ecosystem below is limited to the manifest that exists in this repo
+# (.github/workflows), so every update is tracked through a structured package
+# manager rather than ad-hoc scripts.
+#
+# schedule.interval: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#scheduleinterval
+# groups: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#groups
+# cooldown: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#cooldown
 
 version: 2
 
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-    cooldown:
-      default-days: 14
     commit-message:
       include: "scope"
       prefix: ":dependabot: github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      # wait 7 days after release before proposing routine updates
+      default-days: 7
     groups:
-      github-actions-minor-patch:
-        applies-to: version-updates
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+      # bundle all non-major bumps into a single PR instead of one-per-package
+      minor-and-patch:
+        update-types: ["minor", "patch"]
