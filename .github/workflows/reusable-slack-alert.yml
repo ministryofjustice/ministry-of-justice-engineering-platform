@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       status:
-        description: Status of the caller job or workflow (success or failure)
+        description: Status of the caller job or workflow ("success" or "failure")
         required: true
         type: string
       workflow-name:
@@ -71,7 +71,7 @@ jobs:
                         },
                         {
                           "type": "mrkdwn",
-                          "text": "*Status:*\n${{ job.status }}"
+                          "text": "*Status:*\n${{ inputs.status }}"
                         }
                       ]
                     },
