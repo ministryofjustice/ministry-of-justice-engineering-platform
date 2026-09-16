@@ -36,13 +36,13 @@ jobs:
             {
               "attachments": [
                 {
-                  "color": ${{ inputs.status }} == 'failure' ? "#ff0000" : "#36a64f",
+                  "color": "${{ inputs.status == 'failure' && '#ff0000' || '#36a64f' }}",
                   "blocks": [
                     {
                       "type": "header",
                       "text": {
                         "type": "plain_text",
-                        "text": ${{ inputs.status }} == 'failure' ? "❌ Workflow Failure" : "✅ Workflow Success",
+                        "text": "${{ inputs.status == 'failure' && '❌ Workflow Failure' || '✅ Workflow Success' }}",
                         "emoji": true
                       }
                     },
