@@ -36,7 +36,7 @@ jobs:
             {
               "attachments": [
                 {
-                  "color": "${{ case(inputs.status == 'failure', '#ff0000', inputs.status == 'success', '#36a64f', '#f2b613') }}",
+                  "color": "${{ case(inputs.status == 'failure', '#ff0000', inputs.status == 'success', '#36a64f', inputs.status == 'skipped','#f2b613', '#808080') }}",
                   "blocks": [
                     {
                       "type": "header",
