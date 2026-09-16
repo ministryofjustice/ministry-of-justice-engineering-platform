@@ -17,6 +17,7 @@ This runbook provides operational guidance for the Engineering Platform workflow
 - **`lint.yml`** - Validates GitHub Actions workflows, Markdown, and YAML files
 - **`ossf.yml`** - Publishes OpenSSF Scorecard findings to GitHub code scanning
 - **`reusable-python-tests.yml`** - Reusable workflow for Python testing
+- **`reusable-slack-alert.yml`** - Reusable workflow sending workflow status alerts to slack channel
 
 ## Member Management Workflows
 
