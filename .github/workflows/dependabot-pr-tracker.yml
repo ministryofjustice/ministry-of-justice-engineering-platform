@@ -64,7 +64,7 @@ jobs:
 
           case "$REPO_NAME" in
             developer-experience-documentation|ministry-of-justice-developer-portal|ministry-of-justice-tech-radar|octo-access)
-              TEAM_VALUE="👾 Engineering Portal"
+              TEAM_VALUE="💙 Blueprint"
               ;;
             ministry-of-justice-engineering-platform|ministry-of-justice-github-analysis|moj-github-discovery)
               TEAM_VALUE="🔧 Engineering Platform"
