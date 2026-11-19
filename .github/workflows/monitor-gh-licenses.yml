@@ -57,7 +57,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  #developer-experience-alerts
-        if: ${{ steps.monitor-licenses.outputs.remaining_licenses <= env.LICENSE_THRESHOLD }}
+        if: ${{ fromJSON(steps.monitor-licenses.outputs.remaining_licenses) <= fromJSON(env.LICENSE_THRESHOLD) }}
 
       - name: Slack failure notification
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
