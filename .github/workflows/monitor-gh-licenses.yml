@@ -24,6 +24,7 @@ jobs:
           total_seats_purchased=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_purchased')
           total_seats_consumed=$(gh api /enterprises/ministry-of-justice-uk/consumed-licenses -q '.total_seats_consumed')
           remaining_licenses=$((total_seats_purchased - total_seats_consumed))
+          echo "Remaining licenses: $remaining_licenses"
 
           {
             echo "total_seats_purchased=$total_seats_purchased"
