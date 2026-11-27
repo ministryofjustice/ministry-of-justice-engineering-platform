@@ -1,0 +1,6 @@
+issuer: https://token.actions.githubusercontent.com
+subject: repo:ministryofjustice@2203574/developer-experience-github-management@1333267581:ref:refs/heads/main
+
+permissions:
+  contents: read
+  issues: read
